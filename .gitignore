@@ -1,0 +1,9 @@
+*.pyc
+.DS_Store
+output*
+.ipynb_checkpoints
+.Rhistory
+*.swp
+*.out
+config.py
+
