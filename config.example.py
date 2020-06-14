@@ -20,9 +20,6 @@ SLURM_WORKING_DIR = "/path/to/working/dir"
 CONDA_PATH = "/path/to/conda.sh"
 CONDA_ENV = "conda_env_name"
 
-# subset GPR genes to most well-positioned +1 genes
-SUBSET_GPR_GENES = False
-
 # Directory to watch for slurm child jobs to complete
 WATCH_TMP_DIR = '%s/watch_tmp' % OUTPUT_DIR
 

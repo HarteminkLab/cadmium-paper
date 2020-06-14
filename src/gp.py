@@ -25,7 +25,7 @@ from src.colors import parula
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
 from sklearn.gaussian_process.kernels import WhiteKernel
-from config import rna_dir, mnase_dir, paper_orfs, SUBSET_GPR_GENES
+from config import rna_dir, mnase_dir, paper_orfs
 
 
 class GP:
@@ -182,17 +182,6 @@ class GP:
         if self.name == 'Intercept': include_TPM_0 = False
 
         orfs = paper_orfs
-
-        # TODO: Testing to see how GPR performs on good set of genes @ 120' only
-        # more complex subsetting if we want to subset different genes per 
-        # each time point
-        if SUBSET_GPR_GENES:
-            path = '%s/good_p1_nucs_gene_set_120.csv' % mnase_dir
-            subset_idx = read_orfs_data(path).index.values
-            orfs = orfs.loc[subset_idx]
-
-            print_fl("Subsetting to well-positioned +1 nucleosomes, N=%d" % len(orfs))
-
         orfs_idx = orfs.index.values
 
         X = orfs[[]].copy()
