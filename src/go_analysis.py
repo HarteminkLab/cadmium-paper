@@ -125,11 +125,11 @@ class GOChromatinAnalysis:
     def plot_bar(self, activated_genes=True):
 
         if not activated_genes:
-            title_cat = '%d decreasing' % self.N
+            title_cat = 'decrease'
         else:
-            title_cat = '%d increasing' % self.N
+            title_cat = 'increase'
 
-        title = ("Greatest %s\nchromatin dynamics scores" % title_cat)
+        title = ("Greatest %s in various\nchromatin scores, N=300" % title_cat)
 
         plot_utils.apply_global_settings(30)
 
@@ -205,7 +205,7 @@ class GOChromatinAnalysis:
 
         # Add some text for labels, title and custom x-axis tick labels, etc.
         ax.legend(loc=4, bbox_to_anchor=(0.5, -0.25),
-         frameon=False, fontsize=14)
+         frameon=False, fontsize=18)
         ax.set_yticks(np.arange(len(df)))
 
         for y in np.arange(1, len(prom_sm_vals)):

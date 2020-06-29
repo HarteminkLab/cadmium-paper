@@ -160,6 +160,69 @@ def calculate_cc_summary_measure_range_type(orfs, cross_correlation,
 
     return data
 
+def plot_entropy_example(plotter, orf, plot_span, title):
+
+    from src.chromatin import filter_mnase
+    from src.utils import get_orf
+    from src.reference_data import all_orfs_TSS_PAS
+    import matplotlib.pyplot as plt
+
+    span = (orf.TSS-1000, orf.TSS+1000)
+    data = filter_mnase(plotter.all_mnase_data, span[0], span[1], chrom=orf.chr, time=120)
+    data['orf_name'] = orf.name
+    data.mid = data.mid - orf.TSS
+
+    from src.kernel_fitter import compute_triple_kernel
+    from src.cross_correlation_kernel import MNaseSeqDensityKernel
+
+    nuc_kernel = MNaseSeqDensityKernel(filepath=nuc_kernel_path)
+    sm_kernel = MNaseSeqDensityKernel(filepath=sm_kernel_path)
+    triple_kernel = compute_triple_kernel(nuc_kernel)
+
+    from src.transformations import exhaustive_counts
+    from src.cross_correlation import compute_cross_correlation_metrics
+
+    win_2 = 1000
+    cur_wide_counts_df = exhaustive_counts((-win_2, win_2),
+            (0, 250), 'mid', 'length', parent_keys=['orf_name', 'time'], 
+            data=data, returns='wide', log=False)
+
+    cur_cc = compute_cross_correlation_metrics(cur_wide_counts_df, nuc_kernel,
+            sm_kernel, triple_kernel, times=[120.0])
+
+
+    triple_cc = cur_cc.loc['triple'].loc[orf.name].loc[120]
+
+    from src.entropy import calc_entropy
+    from src.plot_utils import apply_global_settings
+
+    apply_global_settings()
+
+    triple_cc_values = triple_cc[np.arange(plot_span[0], plot_span[0]+150)].values
+    value = calc_entropy(triple_cc_values)
+
+    fig, ax = plt.subplots(1, 1, figsize=(1.5, 2.5))
+    fig.tight_layout(rect=[0.0, 0.0, 1, 0.8])
+    plt.subplots_adjust(hspace=0.0, wspace=0.5)
+
+    plotter.set_span_chrom(plot_span, orf.chr)
+    plotter.plot_typhoon_time(ax, data, 120, scale_z=True)
+    ax.set_xlim(*plot_span)
+
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_xticks([], minor=True)
+    ax.set_yticks([], minor=True)
+
+    ax.tick_params(axis='x', length=0, pad=0)
+    ax.tick_params(axis='y', length=0, pad=0)
+
+    x = triple_cc.index.values.astype(int)
+    y = triple_cc.values.astype(float)
+    ax.fill_between(x, y, color='#28a098')
+
+    ax.set_title("%s\n%.1f bits" % (title, value))
+
 def save_path(strand, select_range, cc_type):
 
     name = get_name(select_range, cc_type)

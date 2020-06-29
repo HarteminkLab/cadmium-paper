@@ -15,8 +15,7 @@ from config import *
 
 class ChromatinDataStore:
 
-    def __init__(self, is_antisense=False, 
-        z_score_scale=True):
+    def __init__(self, is_antisense=False):
 
         self.is_antisense = is_antisense
 
@@ -31,6 +30,8 @@ class ChromatinDataStore:
 
         if is_antisense:
             orfs_idx = antisense_TSS.dropna().index.values
+            antisense_TPM_logfold = read_orfs_data('%s/antisense_TPM_log2fold.csv' % rna_dir)
+            self.antisense_TPM_logfold = antisense_TPM_logfold.loc[orfs_idx]
 
         xrate = read_orfs_data('%s/orf_xrates.csv' % rna_dir)
         xrate_logfold = read_orfs_data('%s/orf_xrates_log2fold.csv' % rna_dir)
@@ -41,18 +42,10 @@ class ChromatinDataStore:
         self.occupancy = occupancy
 
         from src.entropy import load_orf_entropies
+        from src.nucleosome_calling import load_p123
 
-        p1_positions = read_orfs_data('%s/p1_%s.csv' % (mnase_dir, strand_name))
-        p2_positions = read_orfs_data('%s/p2_%s.csv' % (mnase_dir, strand_name))
-        p3_positions = read_orfs_data('%s/p3_%s.csv' % (mnase_dir, strand_name))
-
-        self.p1_shift = difference(p1_positions)
-        self.p2_shift = difference(p2_positions)
-        self.p3_shift = difference(p3_positions)
-
-        self.p1 = p1_positions
-        self.p2 = p2_positions
-        self.p3 = p3_positions
+        (self.p1, self.p2, self.p3, self.p1_shift, 
+         self.p2_shift, self.p3_shift) = load_p123(strand_name)
 
         self.N = len(orfs_idx)
 
@@ -65,6 +58,7 @@ class ChromatinDataStore:
         gene_body_organization = load_orf_entropies('0_150', 'triple', strand_name)
 
         self.gene_body_organization = gene_body_organization.copy().loc[orfs_idx]
+        self.gene_body_organization_raw = self.gene_body_organization
         self.gene_body_organization = normalize_by_time(self.gene_body_organization)
 
         # scale by length of 'promoter'
@@ -76,22 +70,13 @@ class ChromatinDataStore:
         self.transcript_rate_logfold = xrate_logfold.loc[orfs_idx]
 
         self.promoter_sm_occupancy_delta = \
-            difference(self.promoter_sm_occupancy.loc[orfs_idx])
+            difference(self.promoter_sm_occupancy)
         self.gene_body_disorganization_delta = \
-            difference(self.gene_body_organization.loc[orfs_idx])
+            difference(self.gene_body_organization)
         self.promoter_disorganization_delta = \
-            difference(self.promoter_organization.loc[orfs_idx])
+            difference(self.promoter_organization)
 
         self.orfs = orfs
-
-        self.z_score_scale = z_score_scale
-
-        if self.z_score_scale:
-
-            self.gene_body_disorganization_delta = \
-                self.z_scale_chromatin(self.gene_body_disorganization_delta)
-            self.promoter_sm_occupancy_delta = \
-                self.z_scale_chromatin(self.promoter_sm_occupancy_delta)
 
         self.chromatin_data = self.promoter_sm_occupancy_delta.join(
             self.gene_body_disorganization_delta, 
@@ -143,3 +128,4 @@ def pivot_metric(data, value_key, suffix=None):
         pivot_df = add_suffix(pivot_df, suffix)
 
     return pivot_df
+

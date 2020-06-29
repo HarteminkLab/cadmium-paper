@@ -9,7 +9,7 @@ import pandas as pd
 from src.utils import print_fl
 from src.timer import Timer
 from src.tasks import TaskDriver, child_done
-from config import WATCH_TMP_DIR, USE_SLURM, gp_dir
+from config import WATCH_TMP_DIR, USE_SLURM, gp_dir, SLURM_WORKING_DIR, CONDA_PATH, CONDA_ENV
 from src.slurm import submit_sbatch
 from src.gp import GP
 
@@ -112,17 +112,16 @@ def nuc_model(sample_N=None):
 
 def get_model_funs():
 
-    # TODO: full model only
     models_dic = {
         'Full': full_model,
         # 'Gene body': body_model,
         # 'Promoter': prom_model,
-        # 'Intercept': intercept_model,
-        # 'RNA only': rna_only_model,
+        'Intercept': intercept_model,
+        'RNA only': rna_only_model,
         # 'Nucleosome shift': shift_model,
-        # 'Combined chromatin': combined_model,
-        # 'Promoter occupancy': small_promoter_model,
-        # 'Nucleosome disorganization': gene_disorg_model,
+        'Combined chromatin': combined_model,
+        'Promoter occupancy': small_promoter_model,
+        'Nucleosome disorganization': gene_disorg_model,
         # 'Sense': sense_model,
         # 'Cross correlation': cc_model,
         # 'Occupancy': occ_model,
@@ -153,7 +152,7 @@ def run_models(save_dir, timer):
             pass
         else:
             exports = ("MODEL=%s,SLURM_WORKING_DIR=%s,CONDA_PATH=%s,CONDA_ENV=%s" % \
-                      (name.replace(' ', '_')
+                      (name.replace(' ', '_'),
                        SLURM_WORKING_DIR, CONDA_PATH, CONDA_ENV))
             script = 'scripts/4_analysis/gp.sh'
             submit_sbatch(exports, script, WATCH_TMP_DIR)

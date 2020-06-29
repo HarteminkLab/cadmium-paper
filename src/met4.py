@@ -20,9 +20,9 @@ def group_colors():
 
 def orf_groups():
     return {'Glutathione Biosynthesis': ['YJL101C', 'YOL049W'],
-            'Met4-Complex': ['YDR253C', 'YPL038W', 'YJR060W', 'YNL103W', 'YIR017C'],
+            'Met4-Complex': ['YNL103W', 'YJR060W','YIR017C', 'YPL038W', 'YDR253C'],
             'Methyl Cycle': ['YER091C', 'YLR180W', 'YDR502C', 'YER043C'],
-            'SCF-Met30': ['YDR054C', 'YDL132W', 'YIL046W', 'YDR328C'],
+            'SCF-Met30': ['YDR054C', 'YDL132W', 'YDR328C', 'YIL046W'],
             'Sulfur Assimilation': [
             'YBR294W', 'YLR092W', 'YJR010W', 'YKL001C', 'YPR167C', 'YJR137C', 'YFR030W'],
             'Sulfur Sparing Isoforms': ['YGR087C',
@@ -39,8 +39,8 @@ def all_genes():
 
 
 def plot_timecourse(data_store):
-    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
-    fig.tight_layout(rect=[0.05, 0.03, 0.95, 0.85])
+    fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+    fig.tight_layout(rect=[0.05, 0.3, 0.95, 0.85])
 
     met30_orf = get_orf_name('MET30')
     met32_orf = get_orf_name('MET32')
@@ -53,13 +53,12 @@ def plot_timecourse(data_store):
 
     ax.plot(x, disorg.loc[met30_orf], color='#7A7A7A', mec='#7A7A7A', mfc='white',
             marker='o', fillstyle='full', markersize=7,
-          label='Met30')
+          label='MET30')
     ax.plot(x, disorg.loc[met32_orf], mec='#4F8DC6', mfc='white',
             color='#4F8DC6', marker='v', fillstyle='full', markersize=9,
-          label='Met32')
+          label='MET32')
 
     # for orf in sulf_assim:
-    disorg_std=1
     sa_disorg = disorg.loc[sulf_assim].mean()
     sa_disorg_lower = disorg.loc[sulf_assim].min()
     sa_disorg_upper = disorg.loc[sulf_assim].max()
@@ -69,7 +68,7 @@ def plot_timecourse(data_store):
     ax.fill_between(x, sa_disorg_lower, sa_disorg_upper, color='#FAF1EC', zorder=1, alpha=1.)
 
     dis_ticks = np.arange(-8, 9, 2)
-    ax.set_yticks(dis_ticks*disorg_std)
+    ax.set_yticks(dis_ticks)
     labels = ['%d' % s for s in dis_ticks]
     labels[4] = 0
     labels = labels[0:3] + labels[3:4] + ['%s' % l for l in labels[4:]]
@@ -80,8 +79,9 @@ def plot_timecourse(data_store):
     ax.set_xticklabels(['%s\'' % str(t) for t in times])
 
     ax.set_xlim(-0.2, 5.2)
-    ax.set_ylim(disorg_std*-0.5, disorg_std*9)
-    ax.legend()
+    ax.set_ylim(-0.5, 5)
 
-    ax.set_title('Sulfur pathway\ntime course', fontdict={'family':'Arial'}, fontsize=18)
+    ax.set_title('Sulfur pathway\ntime course', fontdict={'family':'Open Sans'}, fontsize=18)
+    ax.legend(bbox_to_anchor=(0.45, -0.15),
+              frameon=False, fontsize=12)
 

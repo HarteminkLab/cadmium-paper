@@ -8,6 +8,9 @@ from src.plot_utils import register_nucleosomal_small_cmap
 from src.chromatin_metrics_data import ChromatinDataStore
 
 
+# limits for line plots for chromatin metrics
+CHROM_YLIMS = 1, 4
+
 class SummaryPlotter:
 
     def __init__(self, store, orfs, cross_correlation):
@@ -41,13 +44,13 @@ class SummaryPlotter:
         # normalize
         self.orf_cc = self.orf_cc / self.cc_bp_std
 
-    def plot_cross_correlation_heatmap(self, show_colorbar=False, title=''):
+    def plot_cross_correlation_heatmap(self, show_colorbar=False, title='', nucs=None):
         return self.plot_df_heatmap(data=self.orf_cc*-1,
-            show_colorbar=show_colorbar, title=title, shaded=(-200, 500))
+            show_colorbar=show_colorbar, title=title, shaded=(-200, 500), nucs=nucs)
 
     def plot_df_heatmap(self, data, show_colorbar=False, title='', 
         vlims=[-3, 3], cmap='Spectral_r', cbarticks=1, cbarscale=1.,
-        shaded=(-200, 500)):
+        shaded=(-200, 500), nucs=None):
 
         fig, ax = plt.subplots(1, 1, figsize=(8, 3))
         fig.tight_layout(rect=[0.075, 0.03, 0.8, 0.945])
@@ -82,6 +85,25 @@ class SummaryPlotter:
         ax.set_title(title, fontsize=24)
         ax.set_xlim(-600, 600)
 
+        if nucs is not None:
+            from src.utils import time_to_index
+
+            times = self.times
+            for i in range(len(times)):
+                time = times[i]
+                time_data = nucs[nucs.time == time]
+                ax.scatter(time_data.mid , [5.5-i]*len(time_data), 
+                    facecolor='none', edgecolor='red', marker='D', s=16)
+
+            for link in nucs.link.unique():
+                link_nucs = nucs[nucs.link == link].reset_index(drop=True)
+                for j in range(1, len(link_nucs)):
+                    prev = link_nucs.loc[j-1]
+                    cur = link_nucs.loc[j]
+
+                    plt.plot([prev.mid, cur.mid], [5.5 - time_to_index(prev.time),
+                     5.5 - time_to_index(cur.time)], color='red')
+
         for k, spine in ax.spines.items():
             spine.set_zorder(100)
 
@@ -93,7 +115,7 @@ class SummaryPlotter:
             ticks = np.arange(vlims[0], vlims[1]+cbarticks, cbarticks)
             cbar.set_ticks(ticks)
             cbar.ax.set_yticklabels(['%.0f' % (t/cbarscale) for t in ticks])
-            cbar.ax.set_ylabel('Cross-correlation, per bp',
+            cbar.ax.set_ylabel('Cross correlation, per bp',
                 rotation=270, va='bottom')
 
         return fig
@@ -144,9 +166,9 @@ class SummaryPlotter:
         max_rate = np.max(xrate_values)
         min_rate = np.min(xrate_values)
 
-        if max_rate > 6 or max_chrom > 3:
+        if max_rate > 4 or max_chrom > 2:
             lim_type = '+'
-        elif min_rate < -6 or min_chrom < -3:
+        elif min_rate < -4 or min_chrom < -2:
             lim_type = '-'
         else:
             lim_type = None
@@ -166,7 +188,7 @@ class SummaryPlotter:
             lim_type=lim_type,
             lims=lims[0])
         format_xrate_ax(x_rate_ax, xrate_color, 
-            'log$_2$ fold-change transcription Rate', lim_type=lim_type,
+            'Log$_2$ fold-change transcription Rate', lim_type=lim_type,
             lims=lims[1])
 
         sm_ax.spines['right'].set_edgecolor(xrate_color)
@@ -183,7 +205,7 @@ class SummaryPlotter:
 
         lines = sm_line + dis_line + xrate_line
         labels = [l.get_label() for l in lines]
-        dis_ax.legend(lines, labels, bbox_to_anchor=(0.7, -0.15), 
+        dis_ax.legend(lines, labels, bbox_to_anchor=(0.5, -0.17), 
             frameon=False, fontsize=16)
 
         for ax in [sm_ax, x_rate_ax, dis_ax]:
@@ -197,7 +219,7 @@ class SummaryPlotter:
         for gene_name in genes:
             
             # create heatmaps of the cross correlation for each gene
-            write_path = "%s/%s.png" % (cc_dir, gene_name)
+            write_path = "%s/%s.pdf" % (cc_dir, gene_name)
             
             try: self.set_gene(gene_name)
             except KeyError:
@@ -205,8 +227,8 @@ class SummaryPlotter:
                 continue
             
             fig = self.plot_cross_correlation_heatmap(show_colorbar=True,
-                title='%s cross correlation' % gene_name.title())
-            plt.savefig(write_path, dpi=150, transparent=False)
+                title='%s cross correlation' % gene_name)
+            plt.savefig(write_path, transparent=False)
 
             # close plots
             if not show_plot:
@@ -219,10 +241,10 @@ class SummaryPlotter:
             else: lims = (None, None, None)
 
             # plot lines plots of time course
-            write_path = "%s/%s.png" % (lines_dir, gene_name)
+            write_path = "%s/%s.pdf" % (lines_dir, gene_name)
             fig = self.plot_lines(self.gene.name,
-                title='%s time course' % gene_name.title(), lims=lims)
-            plt.savefig(write_path, dpi=150, transparent=False)
+                title='%s time course' % gene_name, lims=lims)
+            plt.savefig(write_path, transparent=False)
             
             # close
             if not show_plot:
@@ -234,24 +256,24 @@ def calc_padding(neg_chrom, tot_chrom, pos_xrate):
     # calculate how much to pad the origin to match the chromatin scale
     return float(neg_chrom)/tot_chrom * pos_xrate / (1 - float(neg_chrom)/tot_chrom)
 
-def format_xrate_ax(x_rate_ax, color, ylabel, lim_type=None, chrom_lims=None, 
+def format_xrate_ax(x_rate_ax, color, ylabel, lim_type=None, 
     lims=None):
 
     # calculate how much to pad the origin to match the chromatin
     # scale
-    neg_chrom = 2
-    tot_chrom = 10
+    neg_chrom = CHROM_YLIMS[0]
+    tot_chrom = CHROM_YLIMS[0]+CHROM_YLIMS[1]
     pos_xrate = 16
     padding = calc_padding(neg_chrom, tot_chrom, pos_xrate)
 
     if lims is not None:
         ylim = lims
     elif lim_type == '-':
-        ylim = (-16, padding)
+        ylim = (-pos_xrate, padding)
     elif lim_type == '+':
-        ylim = (-padding, 16)
+        ylim = (-padding, pos_xrate)
     else:
-        ylim = (-8, 8)
+        ylim = (-pos_xrate/2., pos_xrate/2.)
 
     x_rate_ax.set_yticks(np.arange(-20, 24, 4))
     x_rate_ax.set_yticks(np.arange(-20, 24, 2), minor=True)
@@ -262,16 +284,17 @@ def format_xrate_ax(x_rate_ax, color, ylabel, lim_type=None, chrom_lims=None,
             va='bottom', color=color, fontsize=16)
 
 def format_line_ax(ax, color, ylabel, 
-        scale=1., ylim_padding=2, lim_type=None, lims=None):
+        scale=1., lim_type=None, lims=None):
 
     if lims is not None:
         ylim_scaled = lims
     elif lim_type == '-':
-        ylim_scaled = (-8, ylim_padding)
+        ylim_scaled = (-CHROM_YLIMS[1], CHROM_YLIMS[0])
     elif lim_type == '+':
-        ylim_scaled = (-ylim_padding, 8)
+        ylim_scaled = (-CHROM_YLIMS[0], CHROM_YLIMS[1])
     else:
-        ylim_scaled = (-5, 5)
+        tot_chrom = CHROM_YLIMS[1]+CHROM_YLIMS[0]
+        ylim_scaled = (-tot_chrom/2., tot_chrom/2.)
 
     # scaled values for output
     yticks_scaled = np.arange(-20, ylim_scaled[1]+2, 2)

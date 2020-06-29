@@ -10,7 +10,7 @@ class ChromatinHeatmaps:
     def __init__(self, data_store):
 
         self.data_store = data_store
-        self.color_bar_scales = [8, 8, 15, 15]
+        self.color_bar_scales = [4, 4, 15, 15]
         self.orfs = data_store.orfs
         self.show_xlabels = True
         self.show_saved_plot = False
@@ -38,7 +38,7 @@ class ChromatinHeatmaps:
         ax1, ax2 = tuple(axs)
 
         titles = ['$\\Delta$ Promoter occupancy /\n$\\Delta$ Disorganization',
-                  'log$_2$ fold-change\nTranscription rate']
+                  'Log$_2$ fold-change\ntranscription rate']
         scale_cbars = [1, 1, 1]
         for i in range(len(axs)):
             ax = axs[i]
@@ -49,7 +49,7 @@ class ChromatinHeatmaps:
             plot_utils.format_spines(ax, lw=1.2)
 
         if write_path is not None:
-            plt.savefig(write_path, dpi=150, transparent=False)
+            plt.savefig(write_path, transparent=False)
 
     def plot_heatmap(self, orf_groups=None, group_names=None, 
         group_colors=None, orf_names=None, head=None, tail=None, 
@@ -67,7 +67,7 @@ class ChromatinHeatmaps:
 
         if ax == None:
             fig, ax = plt.subplots(1, 1, figsize=(10, fig_height))
-            fig.tight_layout(rect=[0.05, 0.03, 0.92, 0.95])
+            fig.tight_layout(rect=[0.05, 0.03, 0.91, 0.95])
             fig.patch.set_alpha(0.0)
         else: fig = None
 
@@ -110,7 +110,6 @@ class ChromatinHeatmaps:
                 if cur_height < 100 and self.plot_gene_names:
                     names = group_data.join(self.orfs[['name']])['name'].values
                     names = list(reversed(names))
-                    names = [name.title() for name in names]
 
                     tick_labels = tick_labels + list(names)
                     tick_positions = tick_positions + \
@@ -123,7 +122,7 @@ class ChromatinHeatmaps:
                     ax.text((num_times*num_columns + 
                             (num_columns-1)*col_spacing+0.5),
                             tick_positions[i], tick_labels[i],
-                            ha='left', va='center', fontsize=13,
+                            ha='left', va='center', fontsize=14,
                             fontdict={'fontname': 'Open Sans'})
 
                 # group names
@@ -151,7 +150,6 @@ class ChromatinHeatmaps:
             if height < 100 and self.plot_gene_names:
                 names = plot_data.join(self.orfs[['name']])['name'].values
                 names = list(reversed(names))
-                names = [name.title() for name in names]
                 tick_labels = tick_labels + list(names)
                 tick_positions = tick_positions + \
                     list(np.arange(height))
@@ -162,7 +160,7 @@ class ChromatinHeatmaps:
             y_padding = len(plot_data)*1e-2
 
         ax.set_yticks(np.array(tick_positions)+0.5)
-        ax.set_yticklabels(tick_labels)
+        ax.set_yticklabels(tick_labels, fontsize=26)
 
         if group_names is not None:
 
@@ -184,8 +182,7 @@ class ChromatinHeatmaps:
             ax.set_ylim(-y_padding, cur_row_height+y_padding)
 
             ax.tick_params(axis='x', labelsize=10, length=0, pad=15)
-            ax.tick_params(axis='y', labelsize=10, length=0, pad=0)
-            plot_utils.format_ticks_font(ax, fontsize=18)
+            ax.tick_params(axis='y', labelsize=18, length=0, pad=0)
 
         ax.yaxis.tick_right()
 
@@ -208,7 +205,7 @@ class ChromatinHeatmaps:
         ax.spines['bottom'].set_visible(False)
 
         if write_path is not None:
-            plt.savefig(write_path, dpi=150, transparent=True)
+            plt.savefig(write_path, transparent=True)
             print_fl("Writing %s" % write_path)
 
             # close plots
@@ -266,7 +263,8 @@ class ChromatinHeatmaps:
         im = ax.imshow(plot_data,
             aspect=self.aspect, 
             vmin=-cbar_scale, vmax=cbar_scale, cmap='RdBu_r',
-            extent=[x_start, x_end, y_start, y_end], zorder=3)
+            extent=[x_start, x_end, y_start, y_end], zorder=3,
+            rasterized=True)
 
         x_span = (x_start, x_end)
         y_span = (y_start, y_end)
@@ -320,7 +318,7 @@ def _add_vline(lines, x, ys):
     lines.append(((x, ys[0]), (x, ys[1])))
 
 
-def _make_fake_cbar(ax, vlim, title, scale=1, cmap='RdBu'):
+def _make_fake_cbar(ax, vlim, title, scale=1, cmap='RdBu_r'):
     """Make fake cbar by drawing gradient box"""
     
     Y = np.linspace(-vlim, vlim, 100)

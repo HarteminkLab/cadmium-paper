@@ -6,6 +6,21 @@ import numpy as np
 import math
 
 
+def convert_to_latex_sci_not(val):
+    import numpy as np
+
+    scinot_str = "%.2g" % val
+
+    spl = scinot_str.split('e')
+    if len(spl) == 2:
+        comp, mult = tuple(spl)
+        mult = mult.replace('+', '')
+        ret = "%s$\\times10^{%s}$" % (comp, mult)
+    else:
+        ret = scinot_str
+    return ret
+
+
 def nearest(value, nearest, func, type_fun=float):
     return type_fun(func(float(value) / nearest) * nearest)
 

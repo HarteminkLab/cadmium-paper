@@ -88,5 +88,5 @@ class TestEntropyKernels:
         plt.ylim(7.5, 9)
         plt.title(self.gene_name)
 
-        plt.savefig(write_path, dpi=150)
+        plt.savefig(write_path)
         plt.close(fig)

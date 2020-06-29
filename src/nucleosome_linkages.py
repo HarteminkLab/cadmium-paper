@@ -43,14 +43,16 @@ def get_p_positions(p123, linkages, which_p):
 
 def find_p123_gene(gene, nucleosome_linkages):
 
+    origin = 0 # TSS
     nuc_padding = 80
     p1_link, p2_link, p3_link = None, None, None
 
-    p1_link, min_p1_pos = find_p_nucleosome_link(gene, nucleosome_linkages)
+    p1_link, min_p1_pos = find_p_nucleosome_link(gene, nucleosome_linkages, origin=origin, 
+        search_window=240)
 
     if p1_link is not None:
         p2_link, min_p2_pos = find_p_nucleosome_link(gene, nucleosome_linkages, 
-            min_mid=min_p1_pos + nuc_padding, 
+            min_mid=min_p1_pos + nuc_padding,
             exclude=[p1_link])
 
     if p2_link is not None:
@@ -61,11 +63,12 @@ def find_p123_gene(gene, nucleosome_linkages):
     return p1_link, p2_link, p3_link
 
 
-def find_p_nucleosome_link(gene, nucleosome_linkages, min_mid=None, exclude=[]):
+def find_p_nucleosome_link(gene, nucleosome_linkages, min_mid=None, 
+    search_window=0, origin=0,
+    exclude=[]):
 
-    search_window_2 = 0
+    search_window_2 = search_window/2.
     min_cc = 0.05
-    origin = 0
     max_mid = origin + 700 + search_window_2
 
     if min_mid is None:

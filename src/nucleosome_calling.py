@@ -105,5 +105,100 @@ def plot_nuc_calls_cc():
     ax.set_title("Gene body nucleosomes, 0 min", fontsize=24)
     ax.set_ylim(0, 600)
     ax.set_xlim(-200, 600)
-    ax.set_xlabel('Position, bp')
-    ax.set_ylabel('Cumulative nucleosome\ncross-correlation score across genes')
+    ax.set_xlabel('Position (bp)')
+    ax.set_ylabel('Cumulative nucleosome\ncross correlation score across genes')
+
+def plot_p123(gene_name, orf_cc, plotter, sum_plotter, save_dir):
+
+    from src.nucleosome_linkages import plot_linkages_cc, get_linkages_cc, find_p123_gene
+    from src.utils import get_orf 
+
+    plot_linkages_lines = False
+    orf = get_orf(gene_name)
+    cur_cc, linkages, _ = get_linkages_cc(orf_cc, gene_name, plotter.orfs)
+    p1, p2, p3 = find_p123_gene(orf, linkages)
+
+    if plot_linkages_lines:
+        plot_linkages = linkages[linkages.link.isin([p1, p2, p3])]
+        plot_linkages_cc(cur_cc, plot_linkages)
+    
+    plotter.disable_mnase_seq = False
+
+    min_cc_plotting = -1
+
+    plot_linkages = linkages[linkages.link.isin([p1, p2, p3])]
+    plot_linkages = plot_linkages[plot_linkages.cross_correlation > min_cc_plotting]
+
+    # typhoon plot of linkages
+    plotter.linkages = plot_linkages
+    fig, time_ax, twen_axs = plotter.plot_gene(gene_name, 
+        figwidth=12, padding=(500, 1000), highlight=False, dpi=100,
+        save_dir=save_dir, prefix='typhoon_shift_')
+    plt.close(fig)
+
+    # get nucleosome positions by time and linkage
+    # TODO: use this data structure for typhoon plot
+    time_mids = pd.DataFrame()
+    for p_nuc in [p1, p2, p3]:
+        p_pos = linkages[linkages.link == p_nuc]
+        cur_mids = linkages[linkages.link == p_nuc][['time', 'mid']]
+        cur_mids['link'] = p_nuc
+        time_mids = time_mids.append(cur_mids)
+
+    # plot cross correlation
+    sum_plotter.set_gene(gene_name)
+    write_path = "%s/cc_%s.pdf" % (save_dir, gene_name)
+    fig = sum_plotter.plot_cross_correlation_heatmap(show_colorbar=True,
+                    title='%s cross correlation' % gene_name, nucs=time_mids)
+    plt.savefig(write_path, transparent=False)
+    plt.close(fig)
+
+
+def is_row_valid(row, key1, key2):
+    
+    from config import times
+
+    # constrain +1 and +2 to a distance
+    # greater than 147
+    repeat_min = 147
+    
+    for time in times:
+        p1_pos = row["%.1f_%s" % (time, key1)]
+        p2_pos = row["%.1f_%s" % (time, key2)]
+        p1_p2_difference = p2_pos - p1_pos
+        if p1_p2_difference < repeat_min:
+            return False
+            break
+
+    return True
+
+def validate_pair(pair_of_nucs, key1, key2):
+    valid_rows = pair_of_nucs.apply(lambda row: is_row_valid(row, key1, key2), axis=1)
+    return pair_of_nucs[valid_rows].index
+
+def load_p123(strand_name):
+    from config import mnase_dir
+    from src.datasets import read_orfs_data
+    from src.transformations import difference
+
+    p1_positions = read_orfs_data('%s/p1_%s.csv' % (mnase_dir, strand_name))
+    p2_positions = read_orfs_data('%s/p2_%s.csv' % (mnase_dir, strand_name))
+    p3_positions = read_orfs_data('%s/p3_%s.csv' % (mnase_dir, strand_name))
+
+    p12 = p1_positions.join(p2_positions, lsuffix='_+1', rsuffix='_+2')
+    p23 = p2_positions.join(p3_positions, lsuffix='_+2', rsuffix='_+3')
+
+    valid_12_orfs = validate_pair(p12, '+1', '+2')
+    valid_23_orfs = validate_pair(p23, '+2', '+3')
+
+    valid_orfs = list(set(valid_12_orfs).intersection(set(valid_23_orfs)))
+
+    p1_shift = difference(p1_positions.loc[valid_orfs])
+    p2_shift = difference(p2_positions.loc[valid_orfs])
+    p3_shift = difference(p3_positions.loc[valid_orfs])
+
+    p1 = p1_positions.loc[valid_orfs]
+    p2 = p2_positions.loc[valid_orfs]
+    p3 = p3_positions.loc[valid_orfs]
+
+    return p1, p2, p3, p1_shift, p2_shift, p3_shift

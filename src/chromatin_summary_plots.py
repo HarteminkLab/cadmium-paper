@@ -14,46 +14,47 @@ from src.utils import get_orf_names, get_orf_name
 def plot_disorg_vs_xrate(datastore, selected_genes):
     
     x = datastore.gene_body_disorganization_delta.mean(axis=1)
-    y = datastore.transcript_rate_logfold.mean(axis=1)
+    y = datastore.transcript_rate_logfold.mean(axis=1).loc[x.index]
 
     model = plot_distribution(x, y, '$\\Delta$ Nucleosome disorganization', 
-                              'log$_2$ fold-change transcription rate', 
+                              'Log$_2$ fold-change transcription rate', 
                               highlight=selected_genes,
                              title='Nucleosome disorganization vs transcription')
 
 def plot_occ_vs_xrate(datastore, selected_genes):
     x = datastore.promoter_sm_occupancy_delta.mean(axis=1)
-    y = datastore.transcript_rate_logfold.mean(axis=1)
+    y = datastore.transcript_rate_logfold.mean(axis=1).loc[x.index]
 
     model = plot_distribution(x, y, '$\\Delta$ Promoter occupancy', 
-                              'log$_2$ fold-change transcription rate', 
+                              'Log$_2$ fold-change transcription rate', 
                               highlight=selected_genes,
+                              xlim=(-2, 2),
                              title='Promoter occupancy vs transcription')
 
 def plot_diosorg_vs_occ(datastore, selected_genes):
     x = datastore.promoter_sm_occupancy_delta.mean(axis=1)
-    y = datastore.gene_body_disorganization_delta.mean(axis=1)
+    y = datastore.gene_body_disorganization_delta.mean(axis=1).loc[x.index]
 
     model = plot_distribution(x, y, '$\\Delta$ Promoter occupancy', 
                               '$\\Delta$ Nucleosome disorganization', 
                               highlight=selected_genes,
                              title='Promoter occupancy vs nucleosome disorganization',
-                             xlim=(-4, 4), ylim=(-4, 4))
+                             xlim=(-2.5, 2.5), ylim=(-2.5, 2.5))
 
 def plot_combined_vs_xrate(datastore, selected_genes):
 
     x = datastore.combined_chromatin_score
-    y = datastore.transcript_rate_logfold.loc[x.index].mean(axis=1)
+    y = datastore.transcript_rate_logfold.loc[x.index].mean(axis=1).loc[x.index]
 
     model = plot_distribution(x, y, '$\\Delta$ Combined chromatin dynamics score', 
-                              'log$_2$ fold-change transcription rate', 
+                              'Log$_2$ fold-change transcription rate', 
                               highlight=selected_genes,
                              title='Combined chromatin vs transcription')
 
 def plot_sul_prom_disorg(datastore):
 
     x = datastore.promoter_sm_occupancy_delta.mean(axis=1)
-    y = datastore.gene_body_disorganization_delta.mean(axis=1)
+    y = datastore.gene_body_disorganization_delta.mean(axis=1).loc[x.index]
 
     model = plot_distribution(x, y, '$\\Delta$ Promoter occupancy', 
                               '$\\Delta$ Nucleosome disorganization', 
@@ -75,6 +76,8 @@ def plot_sul_prom_disorg(datastore):
                                 },
                                 'MET30':{
                                     'color': '#7A7A7A',
+                                    'va':'top',
+                                    'ha':'left',
                                     'marker': 'o',
                                 }
                               },
@@ -87,18 +90,20 @@ def plot_sul_prom_disorg(datastore):
                                     },
                               markersize=60,
                              title='Sulfur pathway genes',
-                             xlim=(-4, 6), ylim=(-4, 6), ha='right', pearson=False)
+                             xstep=1, ystep=1,
+                             xlim=(-1.5, 2.5), ylim=(-1.5, 2.5), ha='right', pearson=False)
 
 def plot_distribution(x_data, y_data, xlabel, ylabel, highlight=[], 
-    title=None, xlim=(-5, 5),ylim=(-10, 10), xstep=2, ystep=2, pearson=True,
-    ha='left', va='bottom', plot_aux='cross', groups={}, highlight_format={},
-    markersize=53, ax=None):
+    title=None, xlim=(-2.5, 2.5), ylim=(-6, 10), xstep=2, ystep=2, pearson=True,
+    ha='right', va='bottom', plot_aux='cross', groups={}, highlight_format={},
+    aux_lw=1.5, s=5, markersize=53, ax=None, text_offset=None):
     
     apply_global_settings(10)
 
     plot_default_ax = ax is None
     if ax is None:
         fig = plt.figure(figsize=(6.5, 6.5))
+
         fig.patch.set_alpha(0.0)
 
         grid_len = 9
@@ -116,6 +121,7 @@ def plot_distribution(x_data, y_data, xlabel, ylabel, highlight=[],
 
     if plot_default_ax:
         plt.subplots_adjust(hspace=0.05, wspace=0.04)
+
 
     if plot_default_ax:
         xspan_diff = xlim[1]-xlim[0]
@@ -136,7 +142,7 @@ def plot_distribution(x_data, y_data, xlabel, ylabel, highlight=[],
         hide_spines(tax)
 
     plot_density_scatter(x_data, y_data,
-        s=5, bw=[0.15, 0.15], 
+        s=s, bw=[0.15, 0.15], 
         ax=ax, cmap=parula(), alpha=1., zorder=20)
 
     plot_rect(ax, xlim[0], ylim[0], xlim[1]-xlim[0], ylim[1]-ylim[0],
@@ -149,10 +155,10 @@ def plot_distribution(x_data, y_data, xlabel, ylabel, highlight=[],
         ax.scatter(group_x, 
                    group_y,
                    s=53, facecolor='none', color=group['color'],
-                   zorder=98, marker='D', linewidth=1.5, label=group_name)
+                   zorder=98, marker='D', linewidth=1.5, label=group_name,
+                   rasterized=True)
 
     for gene_name in highlight:
-
         orf_name = get_orf_name(gene_name)
         if orf_name not in x_data.index: continue
 
@@ -163,10 +169,16 @@ def plot_distribution(x_data, y_data, xlabel, ylabel, highlight=[],
         facecolor = 'none'
 
         if gene_name in highlight_format.keys():
-            marker = highlight_format[gene_name]['marker']
-            color =  highlight_format[gene_name]['color']
 
-            if 'filled' in highlight_format[gene_name].keys():
+            gene_fmt = highlight_format[gene_name]
+
+            if 'marker' in gene_fmt.keys():
+                marker = gene_fmt['marker']
+
+            if 'color' in gene_fmt.keys():
+                color =  gene_fmt['color']
+
+            if 'filled' in gene_fmt.keys():
                 facecolor = color
 
         ax.scatter(selected_x, 
@@ -174,25 +186,40 @@ def plot_distribution(x_data, y_data, xlabel, ylabel, highlight=[],
                    s=markersize, facecolor=facecolor, color=color,
                    zorder=100, marker=marker, linewidth=1.5)
 
-        text_offset = (xlim[1]-xlim[0]) * 5e-3
+        if text_offset is None:
+            text_offset = (xlim[1]-xlim[0]) * 5e-3
 
         offsets = text_offset, text_offset
 
-        if ha == 'right':
+        cur_ha = ha
+        cur_va = va
+
+        if gene_name in highlight_format.keys():
+            cur_hl_fmt = highlight_format[gene_name]
+            cur_ha = cur_hl_fmt['ha'] if 'ha' in cur_hl_fmt.keys() else ha
+            cur_va = cur_hl_fmt['va'] if 'va' in cur_hl_fmt.keys() else va
+
+        if cur_ha == 'right':
             offsets = -text_offset, offsets[1]
+        elif cur_ha == 'left':
+            offsets = text_offset, offsets[1]
+        elif cur_ha == 'center':
+            offsets = 0, offsets[1]
 
-        if va == 'top':
+        if cur_va == 'top':
             offsets = offsets[0], -text_offset
+        elif cur_va == 'bottom':
+            offsets = offsets[0], text_offset
 
-        text = ax.text(selected_x + text_offset, 
-                selected_y + text_offset,
+        text = ax.text(selected_x + offsets[0], 
+                selected_y + offsets[1],
                 gene_name,
 
             fontdict={'fontname': 'Open Sans', 
             'fontweight': 'regular'},
             fontsize=12,
-            ha=ha,
-            va=va,
+            ha=cur_ha,
+            va=cur_va,
             zorder=99
             )
         text.set_path_effects([path_effects.Stroke(linewidth=3, 
@@ -217,22 +244,26 @@ def plot_distribution(x_data, y_data, xlabel, ylabel, highlight=[],
     ax.set_ylabel(ylabel)
 
     if len(groups) > 0:
-        ax.legend(bbox_to_anchor=(0.5, -0.15), frameon=False,
+        ax.legend(loc=1, bbox_to_anchor=(0.475, -0.2), frameon=False,
             fontsize=14)
 
     if plot_aux == 'cross' or plot_aux == 'both':
-        ax.axvline(0, linestyle='dotted', color='#a0a0a0', linewidth=1.5)
-        ax.axhline(0, linestyle='dotted', color='#a0a0a0', linewidth=1.5)
+        ax.axvline(0, linestyle='solid', color='#505050', linewidth=aux_lw, zorder=98)
+        ax.axhline(0, linestyle='solid', color='#505050', linewidth=aux_lw, zorder=98)
 
     if plot_aux == 'diag' or plot_aux == 'both':
         ax.plot([-100, 100], 
             [-100, 100],
-            linestyle='dotted', color='#a0a0a0', linewidth=1.5)
+            linestyle='solid', color='#505050', linewidth=aux_lw, zorder=98)
 
     if pearson:
-        cor = pearsonr(x_data, y_data)
-        title = ("%s\npearsonr=%.2f, p=%.2g" % 
-                 (title, cor[0], cor[1]))
+        from src.math_utils import convert_to_latex_sci_not
+
+        cor, pval = pearsonr(x_data, y_data)
+        pval = convert_to_latex_sci_not(pval)
+
+        title = ("%s\nPearson's r=%.2f, p=%s" % 
+               (title, cor, pval))
 
     if plot_default_ax:
         tax.set_title(title, fontsize=18)

@@ -4,6 +4,13 @@ import pandas as pd
 import numpy as np
 
 
+
+def all_orfs_TSS_PAS():
+    all_orfs = read_sgd_orfs()
+    all_orfs = all_orfs.join(read_park_TSS_PAS()[['TSS', 'PAS']])
+    return all_orfs
+
+
 def parse_roman_chr(series):
     return series.str.replace('chr', '').apply(_fromRoman)
 

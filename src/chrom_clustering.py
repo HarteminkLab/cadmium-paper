@@ -8,7 +8,7 @@ import scipy.cluster.hierarchy as hier
 from src.gene_ontology import GeneOntology
 from src.datasets import read_orfs_data
 from src.plot_utils import apply_global_settings
-from src.utils import get_orf_names, get_link, get_std_cutoff
+from src.utils import get_orf_names, get_std_cutoff
 from src.transformations import z_score_norm
 from src.chromatin_metrics_data import ChromatinDataStore
 from src.chromatin_heatmaps import ChromatinHeatmaps
@@ -28,13 +28,13 @@ class ChromatinClustering:
         self.heatmaps = ChromatinHeatmaps(self.store)
         self.go = GeneOntology()
 
-    def select_data(self, std_cutoff=1.5):
+    def select_data(self, head=500):
 
         act_prm = self.store.promoter_sm_occupancy_delta
         act_dorg = self.store.gene_body_disorganization_delta
 
-        prm_orfs = get_std_cutoff(np.mean(act_prm, axis=1), std_cutoff).index.values
-        dorg_orfs = get_std_cutoff(np.mean(act_dorg, axis=1), std_cutoff).index.values
+        prm_orfs = act_prm.mean(axis=1).sort_values(ascending=False).head(head).index
+        dorg_orfs = act_dorg.mean(axis=1).sort_values(ascending=False).head(head).index
 
         self.data = self.store.chromatin_data.loc[set(prm_orfs).union(set(dorg_orfs))]
 
@@ -82,9 +82,13 @@ class ChromatinClustering:
             df.loc[k, 'avg_n_go'] = avg_n_go
             df.loc[k, 'avg_n_go_per_cluster'] = avg_n_go_per_cluster
             df.loc[k, 'num_clusters_with_go'] = num_clusters_with_go
-            df.loc[k, 'min_fdr'] = self.clustered_go_sig.fdr_bh.min()
-            df.loc[k, 'max_fdr'] = self.clustered_go_sig.fdr_bh.max()
-            df.loc[k, 'avg_fdr'] = self.clustered_go_sig.fdr_bh.mean()
+
+            fdr_bh = self.clustered_go_sig.fdr_bh
+            fdr_bh = fdr_bh[fdr_bh < 1.0]
+
+            df.loc[k, 'min_fdr'] = fdr_bh.min()
+            df.loc[k, 'max_fdr'] = fdr_bh.max()
+            df.loc[k, 'med_fdr'] = fdr_bh.median()
 
 
         self.k_metrics = df
@@ -99,14 +103,14 @@ class ChromatinClustering:
         xlim = ks[0], ks[-1]
         data = self.k_metrics
 
-        ax1.plot(data.index, data.silhouette_score,
+        ax1.plot(data.index, data.med_fdr,
          linewidth=2, color='#558DE7')
         ax1.axvline(k, color='red', linestyle='dotted', lw=2)
         ax1.set_xticks(ks)
-        ax1.set_yticks(np.arange(0.1, 0.5, 0.05))
-        ax1.set_ylim(0.1, 0.35)
+        # ax1.set_yticks(np.arange(0.1, 0.5, 0.05))
+        # ax1.set_ylim(0.1, 0.35)
         ax1.set_xlabel('# clusters', fontsize=14)
-        ax1.set_ylabel('Average silhoutte score', fontsize=14)
+        ax1.set_ylabel('med_fdr', fontsize=14)
 
         ax2.plot(data.index, data.wss, linewidth=2, 
             color='#558DE7')
@@ -509,7 +513,7 @@ def go_bar_plot(chrom_clustering):
 
     clus_ax.tick_params(axis='y', length=0, pad=10, labelsize=16)
     ax.tick_params(axis='y', length=0, pad=10, labelsize=14)
-    ax.set_xlabel('$\log_{10}$ FDR')
+    ax.set_xlabel('Log$_{10}$ FDR')
     ax.set_xticks(np.arange(0, 15, 2))
     ax.set_xticks(np.arange(0, 15, 2))
     ax.set_xlim(0, np.max(fdr)+3)

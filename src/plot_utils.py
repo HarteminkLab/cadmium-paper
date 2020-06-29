@@ -10,13 +10,14 @@ import scipy
 from src.utils import print_fl
 
 
-def apply_global_settings(titlepad=20, linewidth=2):
+def apply_global_settings(titlepad=20, linewidth=2, dpi=300):
 
     from matplotlib import rcParams
     rcParams['axes.titlepad'] = titlepad 
 
     # set font globally
     from matplotlib import rcParams
+    rcParams['figure.dpi'] = dpi
     rcParams['font.family'] = 'Open Sans'
     rcParams['font.weight'] = 'regular'
     rcParams['figure.titleweight'] = 'regular'
@@ -121,7 +122,7 @@ def plot_density_scatter(x, y, bw, cmap='magma_r', vmin=None,
 
     # ax.scatter(x, y, c='', edgecolor='#c0c0c0', s=(s-1), zorder=2)
     ax.scatter(x, y, c=z, edgecolor='', s=s, cmap=cmap, vmin=vmin, 
-        vmax=vmax, alpha=alpha, zorder=zorder)
+        vmax=vmax, alpha=alpha, zorder=zorder, rasterized=True)
 
 
 

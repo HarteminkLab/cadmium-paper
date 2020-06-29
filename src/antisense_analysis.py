@@ -7,6 +7,7 @@ from src.plot_utils import plot_violin, plot_density_scatter, plot_rect
 from src.colors import parula
 from src.datasets import read_orfs_data
 import matplotlib.patheffects as path_effects
+from config import rna_dir
 
 
 def plot_association(data, key, name, color):
@@ -44,14 +45,14 @@ def plot_association(data, key, name, color):
         
     ax2.set_ylim(0, len(prom_data))
     ax2.set_xlim(-7, 7)
-    ax2.set_xlabel('$\\log_2 $ fc Antisense transcripts')
+    ax2.set_xlabel('Log$_2 $ fold-change antisense transcripts')
 
     ax2.axvline(0, color='black', linestyle='solid', linewidth=1.5, zorder=2)
     ax2.set_yticks([])
     plt.suptitle('Antisense %s\n0-120 min' % name, fontsize=16)
 
     ax1.set_title("Sorted $\Delta$ %s" % name)
-    ax2.set_title("$\\log_2$ fc Antisense transcripts")
+    ax2.set_title("Log$_2 $ fold-change Antisense transcripts")
 
 
 def plot_antisense_transcripts(datastore):
@@ -80,18 +81,7 @@ def plot_antisense_vs_sense(antisense_logfold_TPM, sense_logfold_rate, time, hig
     
     antisense_logfold_TPM = antisense_logfold_TPM.loc[sense_logfold_rate.index]
 
-    apply_global_settings(10)
-
-    fig = plt.figure(figsize=(6.5, 6.5))
-    fig.tight_layout(rect=[0.0, 0.0, 1, 1])
-    plt.subplots_adjust(hspace=0.05, wspace=0.04)
-    fig.patch.set_alpha(0.0)
-
-    grid_len = 9
-    grid_size = (grid_len, grid_len)
-    ax = plt.subplot2grid(grid_size, (1, 0), colspan=grid_len-1, rowspan=grid_len-1)
-    tax = plt.subplot2grid(grid_size, (0, 0), colspan=grid_len-1, rowspan=1)
-    rax = plt.subplot2grid(grid_size, (1, grid_len-1), colspan=1, rowspan=grid_len-1)
+    apply_global_settings()
 
     sense_data = sense_logfold_rate[time]
     anti_data = antisense_logfold_TPM[time]
@@ -102,13 +92,14 @@ def plot_antisense_vs_sense(antisense_logfold_TPM, sense_logfold_rate, time, hig
         highlight=highlight,
         xlim=(-9, 9), xstep=2,
         ylim=(-9, 9), ystep=2,
-        pearson=False,
+        pearson=False, aux_lw=1.5,
         title="Sense vs antisense\ntranscription, 0-%.0f min" % time)
 
     for x in [-2, 2]:
-        ax.axvline(x, linewidth=1.5, color='#a0a0a0')
-        ax.axhline(x, linewidth=1.5, color='#a0a0a0')
+        ax.axvline(x, linewidth=2, color='#505050', zorder=98)
+        ax.axhline(x, linewidth=2, color='#505050', zorder=98)
 
+        ax.axvline(x, linestyle='solid', color='#505050', linewidth=2.5, zorder=98)
 
 
 def plot_bar_counts(antisense_TPM_logfold, transcript_rate_logfold,
@@ -265,6 +256,111 @@ def plot_antisense_dist(data):
     ax.set_ylim(0, 0.75)
     ax.axvline(0, color='gray', lw=2, alpha=0.5)
     ax.set_title("Antisense transcripts\ndistribution over time", fontsize=18)
-    ax.set_xlabel('log$_2$ fold-change antisense TPM')
+    ax.set_xlabel('Log$_2$ fold-change antisense TPM')
     ax.set_ylabel('Density')
 
+
+
+def plot_antisense_lengths():
+
+    antisense_boundaries = read_orfs_data('%s/antisense_boundaries_computed.csv' % rna_dir)
+
+    from src.plot_utils import apply_global_settings
+    apply_global_settings()
+
+    fig, ax = plt.subplots(figsize=(4.5, 3))
+    fig.tight_layout(rect=[0.05, 0.05, 0.95, 0.9])
+
+    antisense_lengths = (antisense_boundaries.stop - antisense_boundaries.start).dropna()
+
+    ax.hist(antisense_lengths, 
+             bins=25, linewidth=1, edgecolor='white')
+    ax.set_title("Antisense transcript lengths, N=%d" % len(antisense_lengths), fontsize=16)
+    ax.set_xlabel("Length (bp)")
+    ax.set_ylabel("# of genes")
+
+
+def plot_antisense_calling(gene_name, rna_seq_pileup):
+
+    from src.rna_seq_plotter import get_smoothing_kernel
+    from src.plot_utils import apply_global_settings
+    from src.utils import get_orf
+    from src.transcription import filter_rna_seq
+    from src.transcription import filter_rna_seq_pileup
+    from src.transcript_boundaries import load_park_boundaries
+    from src.plot_orf_annotations import ORFAnnotationPlotter
+    from config import paper_orfs
+    from src.reference_data import read_sgd_orfs, read_park_TSS_PAS
+    from src.datasets import read_orfs_data
+
+    all_orfs = read_sgd_orfs()
+    all_orfs = all_orfs.join(read_park_TSS_PAS()[['TSS', 'PAS']])
+
+    orfs_plotter = ORFAnnotationPlotter(orfs=all_orfs)
+    
+    antisense_boundaries = read_orfs_data('%s/antisense_boundaries_computed.csv' % rna_dir)
+
+    park_boundaries = load_park_boundaries()
+    park_boundaries = park_boundaries.join(paper_orfs[['name']])
+
+    orf = get_orf(gene_name, park_boundaries)
+
+    search_2 = 1000
+    span = orf.transcript_start-search_2, orf.transcript_stop+search_2
+    gene_pileup = filter_rna_seq_pileup(rna_seq_pileup, 
+    span[0], span[1], orf.chr)
+
+    plot_span = span
+    gene = orf
+    gene_rna_seq = gene_pileup
+
+    apply_global_settings(30)
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6, 5.))
+    fig.tight_layout(rect=[0.1, 0, 1, 0.85])
+
+    orfs_plotter.set_span_chrom(plot_span, gene.chr)
+    orfs_plotter.plot_orf_annotations(ax1)
+
+    sense_data = gene_rna_seq[gene_rna_seq.strand == '+']
+    antisense_data = gene_rna_seq[gene_rna_seq.strand == '-']
+    sense_data = np.log2(sense_data.groupby('position').sum()+1).pileup
+    antisense_data = np.log2(antisense_data.groupby('position').sum()+1).pileup
+
+    smooth_kernel = get_smoothing_kernel(100, 20)
+
+    sense_strand = '+' if gene.strand == '+' else '-'
+    antisense_strand = '+' if sense_strand == '-' else '-'
+
+    x = sense_data.index
+    sense_data = np.convolve(sense_data, smooth_kernel, mode='same')
+    antisense_data = np.convolve(antisense_data, smooth_kernel, mode='same')
+
+    ax2.plot(x, sense_data, color=plt.get_cmap('Blues')(0.5))
+    ax2.plot(x, -antisense_data, color=plt.get_cmap('Reds')(0.5))
+    ax2.set_xlim(*plot_span)
+    ax2.set_ylim(-15, 15)
+    ax2.axhline(0, color='black')
+
+    if gene.name in antisense_boundaries.index:
+        anti_gene = antisense_boundaries.loc[gene.name]
+        
+        y_plot = 0, 20 if gene.strand == '-' else -20, 0
+        
+        ax2.plot([anti_gene.start, anti_gene.start],
+                [y_plot[0], y_plot[1]], color='red', linewidth=2.5, solid_capstyle='butt')
+        ax2.plot([anti_gene.stop, anti_gene.stop],
+                [y_plot[0], y_plot[1]], color='red', linewidth=2.5, solid_capstyle='butt')
+
+    ax2.set_xticks(np.arange(plot_span[0], plot_span[1], 500))
+    ax2.set_xticklabels([])
+    _ = ax2.set_xticks(np.arange(plot_span[0], plot_span[1], 100), minor=True)
+
+    ax2.tick_params(labelsize=14)
+    ax2.set_ylabel("Sum log$_2$ (pileup+1)", fontsize=15)
+    ax2.set_xlabel("Position (bp)", fontsize=15)
+
+    ax1.set_title("Calling antisense transcripts", fontsize=26)
+
+    ax2.axvline(383344)
+    ax2.axvline(384114)

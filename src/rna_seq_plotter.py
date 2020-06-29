@@ -10,7 +10,7 @@ from src import plot_utils
 
 class RNASeqPlotter:
 
-    def __init__(self, pileup, times=[0.0, 7.5, 15, 30, 60, 120]):
+    def __init__(self, pileup, times=[0, 7.5, 15, 30, 60, 120]):
         self.times = times
         self.pileup = pileup
         self.span = None
@@ -44,7 +44,7 @@ class RNASeqPlotter:
             Y = np.log2(data['pileup']+1)
             Y = np.convolve(Y, self.smooth_kernel, mode='same')
             if strand == '-': Y = Y*-1
-            ax.plot(X, Y, color=color, linewidth=2)
+            ax.plot(X, Y, color=color, linewidth=2, rasterized=True)
 
         times = self.times
         selected_pileup = self.cur_pileup
@@ -74,7 +74,7 @@ class RNASeqPlotter:
         ax.set_yticklabels([10, 0, 10])
 
         ax.set_yticks(np.arange(-20, 20, 5), minor=True)
-        ax.set_ylabel('log$_2$ [pileup+1]', fontsize=24)
+        ax.set_ylabel('Log$_2$ pileup+1', fontsize=24)
 
         ax.set_ylim(-16, 16)
 

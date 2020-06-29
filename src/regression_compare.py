@@ -119,7 +119,8 @@ class RegressionCompare:
         # plot_compare()
         
 
-def plot_compare(data, markers, colors, fill_styles, metric='r2', rename={}):
+def plot_compare(data, markers, colors, fill_styles, metric='r2', 
+    rename={}, show_legend=False):
             
     plot_utils.apply_global_settings()
 
@@ -172,7 +173,8 @@ def plot_compare(data, markers, colors, fill_styles, metric='r2', rename={}):
     ax.set_xlim(.5, 5.5)
     ax.tick_params('x', labelsize=16, length=0, width=0, pad=10)
     
-    ax.legend(bbox_to_anchor=(1.02, 1.), fontsize=14, frameon=False)
+    if show_legend:
+        ax.legend(bbox_to_anchor=(1.02, 1.), fontsize=14, frameon=False)
 
     for i in range(6):
         ax.axvline(x=i+0.5, linewidth=1.0, color='#303030')
@@ -234,16 +236,16 @@ def main():
     gp_compare.fit(k=10)
 
     gp_compare.plot_compare(metric='r2')
-    plt.savefig('output/gp/r2.png', dpi=150, transparent=True)
+    plt.savefig('output/gp/r2.pdf', transparent=True)
 
     gp_compare.plot_compare(metric='mse')
-    plt.savefig('output/gp/mse.png', dpi=150, transparent=True)
+    plt.savefig('output/gp/mse.pdf', transparent=True)
 
     gp_compare.full_model.plot_fit()
-    plt.savefig('output/gp/full.png', dpi=150, transparent=True)
+    plt.savefig('output/gp/full.pdf', transparent=True)
 
     gp_compare.full_model.plot_fit(120)
-    plt.savefig('output/gp/full_120.png', dpi=150, transparent=True)
+    plt.savefig('output/gp/full_120.pdf', transparent=True)
 
     gp_compare.mse.T.to_csv('output/gp/model_mse.csv', float_format='%.4f')
     gp_compare.r2.T.to_csv('output/gp/model_r2.csv', float_format='%.4f')

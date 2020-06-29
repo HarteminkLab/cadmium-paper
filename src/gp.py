@@ -25,7 +25,7 @@ from src.colors import parula
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
 from sklearn.gaussian_process.kernels import WhiteKernel
-from config import rna_dir, mnase_dir, paper_orfs
+from config import rna_dir, mnase_dir, paper_orfs, SUBSET_GPR_GENES
 
 
 class GP:
@@ -182,6 +182,17 @@ class GP:
         if self.name == 'Intercept': include_TPM_0 = False
 
         orfs = paper_orfs
+
+        # TODO: Testing to see how GPR performs on good set of genes @ 120' only
+        # more complex subsetting if we want to subset different genes per 
+        # each time point
+        if SUBSET_GPR_GENES:
+            path = '%s/good_p1_nucs_gene_set_120.csv' % mnase_dir
+            subset_idx = read_orfs_data(path).index.values
+            orfs = orfs.loc[subset_idx]
+
+            print_fl("Subsetting to well-positioned +1 nucleosomes, N=%d" % len(orfs))
+
         orfs_idx = orfs.index.values
 
         X = orfs[[]].copy()
@@ -286,7 +297,7 @@ class GP:
 
 
     def fit_cv(self, k=10, log=False, l_scale=1,
-            l_bounds=(1, 10)):
+            l_bounds=(0.1, 100)):
 
         (self.last_models, self.mse, 
          self.r2, self.Y_predict) = fold_cross_validation(self.X, 
@@ -325,8 +336,8 @@ class GP:
             c = c.replace('-200 0', 'Promoter')
             c = c.replace('0 500', 'Gene body')
             c = c.replace('len 0 100', 'small fragments')
-            c = c.replace('nuc cc', 'nucleosomal cross-correlation')
-            c = c.replace('small cc', 'small fragments cross-correlation')
+            c = c.replace('nuc cc', 'nucleosomal cross correlation')
+            c = c.replace('small cc', 'small fragments cross correlation')
             c = c.replace('0.0', 'Transcription log fold-change')
             c = c.replace('len 144 174', 'nucleosome fragments')
             columns.append(c)
@@ -475,6 +486,14 @@ def plot_res_distribution_time(model, time, predict_abs_TPM=True,
         title = ("%s', $R^2$=%.2f" % 
                  (str(time), model.r2.loc[time]))
 
+    custom_formatting={}
+
+    if time == 30:
+        custom_formatting = {
+            'HSP26': {'ha': 'left', 'va': 'top'},
+            'RPS7A': {'ha': 'left', 'va': 'bottom'}
+        }
+
     model = plot_distribution(x, y, 
                               'True %s' % label,
                               'Predicted %s' % label,
@@ -485,6 +504,7 @@ def plot_res_distribution_time(model, time, predict_abs_TPM=True,
                               xstep=5,
                               ystep=5,
                               pearson=False, 
+                              highlight_format=custom_formatting,
                               ha='right', plot_aux='both', ax=ax)
 
 def select_time_columns(columns, time, 

@@ -85,7 +85,7 @@ class GeneOntology:
             ]
 
     def plot_sig(self):
-        plot_results("test_{NS}.png", self.goea_results_sig)
+        plot_results("test_{NS}.pdf", self.goea_results_sig)
 
 
 def print_terms(obodag, terms):

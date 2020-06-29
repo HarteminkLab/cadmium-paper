@@ -5,6 +5,14 @@ import numpy as np
 import subprocess
 import contextlib
 
+utils_orfs = None
+
+def time_to_index(time):
+    times = [0, 7.5, 15, 30, 60, 120]
+    indices = {}
+    for i in range(len(times)):
+        indices[times[i]] = i
+    return indices[time]
 
 def print_fl(val='', end='\n', log=False):
 
@@ -40,27 +48,36 @@ def get_size_obj(obj):
     return ("%d %s" % (size, units))
 
 
-def get_gene_named(gene_name, genes=None):
+def get_util_orfs():
+
     from src.reference_data import read_sgd_orfs
 
+    global utils_orfs
+
+    if utils_orfs is None:
+        utils_orfs = read_sgd_orfs()
+
+    return utils_orfs
+
+def get_gene_named(gene_name, genes=None):
+
     if genes is None:
-        genes = read_sgd_orfs()
+        genes = get_util_orfs()
+
     orf = genes[genes['name'] == gene_name].index.values[0]
     return genes.loc[orf]
 
 
 def get_gene(orf_name):
-    from src.reference_data import read_sgd_orfs
-    return read_sgd_orfs().loc[orf_name]
+    return get_util_orfs().loc[orf_name]
 
 
 def get_gene_name(orf_name):
     return get_gene(orf_name)['name']
     
 def get_orfs(gene_names):
-    from src.reference_data import read_sgd_orfs
 
-    orfs = read_sgd_orfs()
+    orfs = get_util_orfs()
     
     # TODO: may need to be optimized
     idxs = []
@@ -76,9 +93,8 @@ def get_orf_names(gene_name):
 
 
 def get_orf(gene_name, orfs=None):
-    from src.reference_data import read_sgd_orfs
     if orfs is None:
-        orfs = read_sgd_orfs()
+        orfs = get_util_orfs()
     orf_name = orfs[(orfs.index == gene_name) | (
         orfs['name'] == gene_name)].index.values[0]
     return orfs.loc[orf_name]

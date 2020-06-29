@@ -168,13 +168,13 @@ def calculate_cross_correlation_orf(orf, chrom_mnase, window,
 
 
 def compute_cross_correlation_metrics(wide_counts_df, nuc_kernel,
-    sm_kernel, triple_kernel):
+    sm_kernel, triple_kernel, times=[0.0, 7.5, 15, 30, 60, 120]):
     """Calculate the three cross correlation values from the nucleosomal
     and small factors kernels"""
 
-    nuc_cc = get_cross_correlation(wide_counts_df, nuc_kernel)
-    small_cc = get_cross_correlation(wide_counts_df, sm_kernel)
-    triple_cc = get_cross_correlation(wide_counts_df, triple_kernel)
+    nuc_cc = get_cross_correlation(wide_counts_df, nuc_kernel, times=times)
+    small_cc = get_cross_correlation(wide_counts_df, sm_kernel, times=times)
+    triple_cc = get_cross_correlation(wide_counts_df, triple_kernel, times=times)
 
     pos_span = max(nuc_cc.columns.min(), small_cc.columns.min()), \
                min(nuc_cc.columns.max(), small_cc.columns.max())

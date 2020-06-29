@@ -10,7 +10,20 @@ Create conda environment to establish required libraries for the scripts.
 conda env create --file cadmium_env.yml
 ```
 
-Setup a `config.py` for the scripts. Use `config.example.py` as a starting point.
+Setup a `config.py` for the scripts. Using `config.example.py` as a starting point.
+
+Download the [MEME-Suite](http://meme-suite.org/doc/download.html) and its
+[motif database](http://meme-suite.org/meme-software/Databases/motifs/motif_databases.12.19.tgz).
+
+Download and extract the [R64 - sacCer3 reference genome](http://sgd-archive.yeastgenome.org/sequence/S288C_reference/genome_releases/S288C_reference_genome_R64-1-1_20110203.tgz)
+
+Make sure to configure your config.py with the correct paths:
+```bash
+FIMO_PATH = '/path/to/fimo'
+FIMO_GENOME_FSA = "path/to/sacCer3/genome.fsa"
+MACISAAC_MEME_PATH = 'path/to/macisacc_yeastdata/fimo/macisaac_yeast.v1.meme'
+SACCER3_REFERENCE = 'path/to/extract/sacCer3/files/'
+```
 
 ## Usage
 

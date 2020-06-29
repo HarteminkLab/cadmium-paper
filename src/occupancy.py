@@ -67,6 +67,10 @@ def calculate_occupancies(orf_mnase, orf, times=[0, 7.5, 15, 30, 60, 120]):
         for pos_span in ranges:
             key = _key_name(len_span, pos_span)
 
+            # flip filtering if crick
+            if orf.strand == '-':
+                pos_span = -pos_span[1], -pos_span[0]
+
             cur_mnase = filter_mnase(orf_mnase, 
                 start=pos_span[0]+TSS, end=pos_span[1]+TSS,
                 length_select=len_span)

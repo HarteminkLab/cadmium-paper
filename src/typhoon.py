@@ -51,6 +51,7 @@ class TyphoonPlotter:
 
     def set_config(self):
 
+        self.motifs = {}
         self.figwidth = 8
         self.show_rna = True
         self.show_orfs = True
@@ -64,7 +65,6 @@ class TyphoonPlotter:
         self.linkages = []
         self.plot_tick_labels = True
         self.vmax = 0.00004
-        self.dpi = 200
         self.highlight_regions = []
         self.highlight_lines = []
         self.disable_mnase_seq = False
@@ -92,7 +92,7 @@ class TyphoonPlotter:
 
         self.orfs_plotter.set_span_chrom(span, chrom)
 
-    def plot(self):
+    def plot(self, dpi=150):
         """Plot the typhoon plot, RNA-seq pileup and annotations for the given
         span window and chromosome for each time"""
 
@@ -109,7 +109,6 @@ class TyphoonPlotter:
         titles = self.titles
         plot_tick_labels = self.plot_tick_labels
         vmax = self.vmax
-        dpi = self.dpi
 
         times = self.times
         n = len(times)
@@ -125,9 +124,11 @@ class TyphoonPlotter:
         if title is None: 
             title = "chr{} {}...{}".format(chrom, start, end)
         elif len(title) > 0:
-            plt.suptitle(title.title(), fontsize=48)
+            plt.suptitle(title, fontsize=48)
 
         annotation_axes = []
+        legend_items = []
+        legend_labels = []
 
         # plot the midpoints
         for i in range(len(times)):
@@ -141,6 +142,19 @@ class TyphoonPlotter:
 
             self.plot_typhoon_time(ax, time_mnase, time)
             ax.set_title(title, fontsize=24)
+
+            j = 0
+            motif_names = list(sorted(self.motifs.keys()))
+            for motif_name in motif_names:
+                motif = self.motifs[motif_name]
+                motif_sc = ax.scatter(motif['mid'], 20, marker=motif['marker'], 
+                    facecolor=motif['color'], edgecolor='black',
+                    linewidth=0.75, s=80, label=motif_name, zorder=102)
+                j += 1
+
+                if i == 0:
+                    legend_items.append(motif_sc)
+                    legend_labels.append(motif_name)
 
         if self.show_orfs:
             self.orfs_plotter.plot_orf_annotations(orf_ax)
@@ -161,17 +175,21 @@ class TyphoonPlotter:
                 zorder=0)
 
             for line in self.highlight_lines:
-                ax.axvline(x=line, color='#AAAAAA', linewidth=2, zorder=100)
+                ax.axvline(x=line, color='#AAAAAA', linewidth=2, zorder=50)
 
             if len(self.linkages) > 0:
                 plot_linkages(time_axes, tween_axes, self.linkages, times)
 
             plot_utils.format_ticks_font(ax, fontsize=20)
 
+        time_axes[-1].legend(legend_items, legend_labels, loc='upper left',
+            bbox_to_anchor=(-0.2, -0.5), columnspacing=1,
+            frameon=False, fontsize=20, ncol=4)
+
         if output is not None:
             # fig.patch.set_facecolor('blue')
             
-            plt.savefig(output, dpi=dpi, transparent=False)
+            plt.savefig(output, transparent=False, dpi=dpi)
             if show_saved_plot: plt.show()
             plt.close(fig)
 
@@ -182,7 +200,7 @@ class TyphoonPlotter:
         Setup figure for time series subplots with connecting plots between
         """
 
-        plot_utils.apply_global_settings(titlepad=10, linewidth=2.5)
+        plot_utils.apply_global_settings(titlepad=10, linewidth=2.5, dpi=self.dpi)
 
         # configuration
         times = self.times
@@ -249,13 +267,13 @@ class TyphoonPlotter:
         if True:
             draw_legend(leg_ax, plot_span)
 
-        fig.tight_layout(rect=[0.075, 0.03, 0.95, 0.945])
+        fig.tight_layout(rect=[0.075, 0.1, 0.95, 0.945])
         plt.subplots_adjust(hspace=0.0, wspace=0.5)
 
-        time_axes[-1].set_xlabel("Position (nt)", fontsize=24)
+        time_axes[-1].set_xlabel("Position (bp)", fontsize=24)
 
         if len(time_axes) > 2:
-            time_axes[2].set_ylabel("Fragment length (nt)", fontsize=24, labelpad=10)
+            time_axes[2].set_ylabel("Fragment length (bp)", fontsize=24, labelpad=10)
 
         return fig, time_axes, tween_axes, orf_ax, rna_ax
 
@@ -318,11 +336,13 @@ class TyphoonPlotter:
 
         # density calculation using multivariate gaussian kernel
         bw = [5, 15]
-        try:
-            kde = sm.nonparametric.KDEMultivariate(data=[x, y], var_type='cc', bw=bw)
-            z = kde.pdf([x, y])
-        except ValueError:
-            z = [0] * len(x)
+
+        if not self.disable_mnase_seq:
+            try:
+                kde = sm.nonparametric.KDEMultivariate(data=[x, y], var_type='cc', bw=bw)
+                z = kde.pdf([x, y])
+            except ValueError:
+                z = [0] * len(x)
 
         # attempt to normalize z so 0.95 quantile is 1.5e-5
         if scale_z:
@@ -334,18 +354,29 @@ class TyphoonPlotter:
             sorted_idx = np.argsort(z)
             x, y, z = x[sorted_idx], y[sorted_idx], z[sorted_idx]
 
-            ax.scatter(x, y, c='', edgecolor='#c0c0c0', s=2, zorder=1)
+            ax.scatter(x, y, c='', edgecolor='#c0c0c0', s=2, zorder=1, rasterized=True)
             ax.scatter(x, y, c=z, edgecolor='', s=3, cmap=cmap, zorder=1,
-             vmin=0, vmax=vmax)
+             vmin=0, vmax=vmax, rasterized=True)
 
         return ax
 
 
     def plot_gene(self, gene_name, save_dir=None, figwidth=10,
             padding=(1000, 1500), highlight=True, 
-            custom_highlight_regions=None):
+            custom_highlight_regions=None, dpi=100,
+            should_plot_motifs=False, prefix=''):
 
+        self.dpi = dpi
         orf_name = get_orf_name(gene_name)
+
+        if should_plot_motifs is not None:
+
+            if type(should_plot_motifs) == list:
+                filter_tfs = should_plot_motifs
+
+            else: filter_tfs = None
+            motifs = load_motif_plot_dic(orf_name, filter_tfs=filter_tfs)
+        else: motifs = {}
 
         if orf_name not in self.orfs.index: return
         gene = self.orfs.loc[orf_name]
@@ -354,37 +385,62 @@ class TyphoonPlotter:
         if gene.strand == '-':
             padding = padding[1], padding[0]
 
+        def TSS_or_ORF_start(gene):
+            if not np.isnan(gene.TSS): 
+                return gene.TSS
+            elif gene.strand == '+':
+                return gene.start
+            elif gene.strand == '-':
+                return gene.stop
+
+        TSS = TSS_or_ORF_start(gene)
+
         # center on TSS
-        span = (gene.TSS - padding[0], gene.TSS + padding[1])
+        span = (TSS - padding[0], TSS + padding[1])
 
         self.set_span_chrom(span, chrom=gene.chr)
         self.title = gene_name
+        self.motifs = motifs
         
         if gene.strand == '+':
-            self.highlight_regions = [(gene.TSS - 200, gene.TSS+500)]
+            self.highlight_regions = [(TSS - 200, TSS+500)]
         else:
-            self.highlight_regions = [(gene.TSS - 500, gene.TSS+200)]
+            self.highlight_regions = [(TSS - 500, TSS+200)]
 
         if custom_highlight_regions is not None:
             self.highlight_regions = custom_highlight_regions
 
         if not highlight: self.highlight_regions = []
 
-        self.highlight_lines = [gene.TSS]
+        self.highlight_lines = [TSS]
         
         # write plot
-        write_path = '%s/%s.png' % (save_dir, gene_name)
+        write_path = '%s/%s%s.pdf' % (save_dir, prefix, gene_name)
 
         if save_dir is not None:
             self.output = write_path
-            print_fl("Wrote %s" % write_path)
 
-        return self.plot()
+        ret = self.plot(dpi=dpi)
 
-    def plot_genes(self, genes, save_dir, 
-                   figwidths={}, paddings={}):
+        if save_dir is not None:
+            print_fl("Writing %s" % write_path)
 
+        return ret
+
+    def plot_genes(self, genes, save_dir, save_all_motifs_dir,
+                   figwidths={}, paddings={}, dpi=100):
+
+        plot_motifs_dic = {
+            'all': ['MET31', 'MET32', 'MET28', 'CBF1', 'MET4', 'HSF1'],
+            'MCD4': ['ZAP1', 'SNF1']
+        }
+            
         for gene_name in genes:
+
+
+            plot_tfs_list = plot_motifs_dic['all']
+            if gene_name in plot_motifs_dic.keys():
+                plot_tfs_list = plot_motifs_dic[gene_name]
 
             figwidth = self.figwidth
             padding = 1000, 1500
@@ -392,9 +448,16 @@ class TyphoonPlotter:
             if gene_name in figwidths.keys(): figwidth = figwidths[gene_name]
             if gene_name in paddings.keys(): padding = paddings[gene_name]
 
-            sys.stdout.write(gene_name + ' ')
+            # save with selected TF motifs
             self.plot_gene(gene_name, save_dir,
-                           figwidth=figwidth, padding=padding)
+                           figwidth=figwidth, padding=padding, 
+                           should_plot_motifs=plot_tfs_list,
+                           dpi=dpi)
+
+            # save all TF motifs
+            self.plot_gene(gene_name, save_all_motifs_dir,
+                           figwidth=figwidth, padding=padding, 
+                           dpi=dpi, should_plot_motifs=True)
 
 
 def _interp(x1, x2, y1, y2):
@@ -489,13 +552,38 @@ def draw_example_mnase_seq(plotter, save_dir):
     ax.set_xticks(np.arange(span[0], span[1], 500))
     ax.set_xticks(np.arange(span[0], span[1], 100), minor=True)
 
-    ax.set_xlabel("Position (nt)", fontsize=16)
-    ax.set_ylabel("Fragment length (nt)", fontsize=16, labelpad=10)
+    ax.set_xlabel("Position (bp)", fontsize=16)
+    ax.set_ylabel("Fragment length (bp)", fontsize=16, labelpad=10)
 
     draw_legend(leg_ax, span, 500)
 
-    write_path = '%s/%s.png' % (save_dir, 'example_mnase_seq')
-    plt.savefig(write_path, dpi=200, transparent=True)
+    write_path = '%s/%s.pdf' % (save_dir, 'example_mnase_seq')
+    plt.savefig(write_path, transparent=True)
+
+
+def draw_example_mnase_seq(plotter, save_dir):
+
+    from src.chromatin import filter_mnase
+
+    span = (124380, 125380)
+    data = filter_mnase(plotter.all_mnase_data, span[0], span[1], chrom=2, time=0)
+
+    fig, (ax, leg_ax) = plt.subplots(2, 1, figsize=(5, 4))
+    fig.tight_layout(rect=[0.1, 0.1, 0.95, 0.945])
+    plt.subplots_adjust(hspace=0.0, wspace=0.5)
+
+    plotter.plot_typhoon_time(ax, data, 0, scale_z=True)
+    ax.set_xlim(*span)
+    ax.set_xticks(np.arange(span[0], span[1], 500))
+    ax.set_xticks(np.arange(span[0], span[1], 100), minor=True)
+
+    ax.set_xlabel("Position (bp)", fontsize=16)
+    ax.set_ylabel("Fragment length (bp)", fontsize=16, labelpad=10)
+
+    draw_legend(leg_ax, span, 500)
+
+    write_path = '%s/%s.pdf' % (save_dir, 'example_mnase_seq')
+    plt.savefig(write_path, transparent=True)
 
 
 def draw_example_rna_seq(plotter, save_dir):
@@ -527,7 +615,7 @@ def draw_example_rna_seq(plotter, save_dir):
         custom_orfs=custom_orfs, should_auto_offset=False)
     rna_plotter.plot(ax=ax)
     orf_ax.set_ylim(-60, 60)
-    ax.set_xlabel('Position (nt)', fontsize=20)
+    ax.set_xlabel('Position (bp)', fontsize=20)
 
     offset = 400
     column_spacing = 750
@@ -580,7 +668,7 @@ def draw_example_rna_seq(plotter, save_dir):
     leg_ax.set_xlim(0, span_width)
     leg_ax.set_ylim(-3, 7)
     leg_ax.axis('off')
-    plt.savefig('%s/example_rna_seq.png' % save_dir, dpi=150, transparent=True)
+    plt.savefig('%s/example_rna_seq.pdf' % save_dir, transparent=True)
 
 
 def plot_example_cross(plotter, save_dir):
@@ -610,8 +698,8 @@ def plot_example_cross(plotter, save_dir):
     ax.set_xticks(np.arange(span[0], span[1], 500))
     ax.set_xticks(np.arange(span[0], span[1], 100), minor=True)
 
-    ax.set_xlabel("Position (nt)", fontsize=16)
-    ax.set_ylabel("Fragment length (nt)", fontsize=16, labelpad=10)
+    ax.set_xlabel("Position (bp)", fontsize=16)
+    ax.set_ylabel("Fragment length (bp)", fontsize=16, labelpad=10)
     ax.set_ylim(-100, 250)
 
     draw_legend(leg_ax, span, 500)
@@ -630,6 +718,57 @@ def plot_example_cross(plotter, save_dir):
     cc_ax.set_ylim(-0.1, 0.4)
     cc_ax.set_yticklabels(np.arange(-1, 5))
 
-    write_path = '%s/%s.png' % (save_dir, 'example_cross_correlation')
-    plt.savefig(write_path, dpi=200, transparent=True)
+    write_path = '%s/%s.pdf' % (save_dir, 'example_cross_correlation')
+    plt.savefig(write_path, transparent=True)
     print_fl("Wrote %s" % write_path)
+
+
+def load_motif_plot_dic(orf_name=None, filter_tfs=None):
+    
+    from config import mnase_dir
+    from src.colors import parula
+
+    found_motifs = pd.read_csv('%s/found_motifs.csv'% mnase_dir)
+    motifs_tfs = found_motifs.tf.unique()
+    motifs_tfs, colors, color_dic = motif_colors(motifs_tfs)
+
+    if orf_name is not None:
+        found_motifs = found_motifs[found_motifs.target == orf_name]
+
+    if filter_tfs is not None:
+        found_motifs = found_motifs[found_motifs.tf.isin(filter_tfs)]
+
+    tfs = {}
+    i = 0
+
+    markers = ['D']
+
+    for idx, row in found_motifs.iterrows():
+        tfs[row.tf] = {'mid': row.motif_mid, 'color': color_dic[row.tf], 'marker': '^'}
+        i += 1
+    return tfs
+
+
+def motif_tf_priorities(motifs_tfs):
+    motifs_tfs = sorted(motifs_tfs, key=lambda x: 
+                        (1, x) if x not in ['MET31', 'MET32', 'MET4', 'HSF1', 'CBF1'] 
+                        else (0, x))
+    return motifs_tfs
+
+
+def motif_colors(motifs_tfs):
+
+    cmap = plt.get_cmap('Spectral')
+    n = len(motifs_tfs)
+    motifs_tfs = motif_tf_priorities(motifs_tfs)
+    
+    fixed_colors = [cmap(0.1), cmap(0.45), cmap(0.7), cmap(0.8), cmap(0.9)]
+    k = len(fixed_colors)
+    rest_colors = cmap(np.linspace(0, 1, n-k))
+
+    colors = np.concatenate([fixed_colors, rest_colors])
+    color_dic = {}
+    for i in range(len(colors)):
+        color_dic[motifs_tfs[i]] = colors[i]
+    
+    return motifs_tfs, colors, color_dic

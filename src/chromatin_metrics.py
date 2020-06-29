@@ -186,13 +186,13 @@ def calculate_and_write_metrics(wide_counts_df, write_dir, arg_chrom=None,
 
     if run_cross:
         with TimingContext() as timing:
-            print_fl("\nCalculating cross-correlation...")
+            print_fl("\nCalculating cross correlation...")
             cross_cor_df = compute_cross_correlation_metrics(wide_counts_df)
             write_path = '%s/orf_cross_correlation%s.h5.z' % (write_dir, suffix)
             cross_cor_df.to_hdf(write_path, 'cross_correlation', 
                 mode='w', complevel=9, complib='zlib')
             print_fl("  " + timing.get_time())
-            print_fl("\nSummarizing cross-correlation...")
+            print_fl("\nSummarizing cross correlation...")
 
         with TimingContext() as timing:
             cross_cor_summary = summary_cross_correlation_cc_class(cross_cor_df)

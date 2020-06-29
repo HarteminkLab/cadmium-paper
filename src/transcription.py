@@ -1,6 +1,6 @@
 
 import numpy as np
-import pandas
+import pandas as pd
 
 
 def filter_rna_seq(rna_seq, start=None, end=None, chrom=None,
@@ -13,7 +13,7 @@ def filter_rna_seq(rna_seq, start=None, end=None, chrom=None,
     if strand is not None:
         select = rna_seq.strand == strand
     else:
-        # dummy select
+        # dummy select statement
         select = ~(rna_seq.strand == None)
 
     if time is not None:
@@ -23,8 +23,14 @@ def filter_rna_seq(rna_seq, start=None, end=None, chrom=None,
         select = (rna_seq.chr == chrom) & select
  
     if start is not None and end is not None:
-        select = ((rna_seq.stop <= end) & 
-                  (rna_seq.start >= start)) & select
+
+        # Entire read must be inside window
+        # select = ((rna_seq.stop <= end) & 
+        #           (rna_seq.start >= start)) & select
+
+        # Read intersects any portion of the window
+        select = ((rna_seq.stop > start) & 
+                  (rna_seq.start <= end)) & select
 
     return rna_seq[select].copy()
 
@@ -56,8 +62,28 @@ def filter_rna_seq_pileup(pileup, start=None, end=None, chrom=None,
 
 
 def calculate_reads_TPM(orfs, rna_seq, 
-    times=[0.0, 7.5, 15.0, 30.0, 60.0, 120.0], antisense=False):
-    """Get RNA-seq read counts and TPM"""
+    times=[0.0, 7.5, 15.0, 30.0, 60.0, 120.0], antisense=False,
+    include_introns=True, CDS_introns=None):
+    """Get RNA-seq read counts and TPM
+
+        When introns are counted, equivalent to using to R package Rsubread::featuresCounts:
+
+        featureCounts(files=<list of files>, annot.ext=<annotation.gff file>,
+                        
+                        # specify that reads are on the reverses strand
+                        strandSpecific=2, 
+                        
+                        # allow reads to map to multiple ORFs
+                        allowMultiOverlap=TRUE, 
+                        
+                        # GTF/GFF settings, count genes and use the "ID" attribute
+                        # as the unique identifier
+                        isGTFAnnotationFile=TRUE,
+                        GTF.featureType='gene', 
+                        GTF.attrType='ID')
+    """
+
+    if include_introns is False and CDS_introns is None: raise ValueError("No CDS introns supplied")
 
     read_counts = orfs[[]].copy()
 
@@ -70,7 +96,17 @@ def calculate_reads_TPM(orfs, rna_seq,
         chrom_rna_seq = filter_rna_seq(rna_seq, chrom=chrom)
         
         for idx, orf in chrom_orfs.iterrows():
-            orf_rna_seq = filter_rna_seq(chrom_rna_seq, start=orf.start, end=orf.stop)
+
+            if include_introns: 
+                orf_rna_seq = filter_rna_seq(chrom_rna_seq, start=orf.start, end=orf.stop)
+            else:
+                orf_rna_seq = pd.DataFrame()
+
+                exons = CDS_introns[(CDS_introns.parent == orf.name) & (CDS_introns.cat == 'CDS')]
+
+                for _, CDS in exons.iterrows():
+                    CDS_rna_seq = filter_rna_seq(chrom_rna_seq, start=CDS.start, end=CDS.stop)
+                    orf_rna_seq = orf_rna_seq.append(CDS_rna_seq)
 
             for time in times:
                 time_rna_seq = filter_rna_seq(orf_rna_seq, time=time)
@@ -84,7 +120,7 @@ def calculate_reads_TPM(orfs, rna_seq,
 
                 read_counts.loc[idx, time] = len(cur_orf_read_counts)
 
-    orf_TPMs = convert_to_TPM(read_counts, orfs)
+    orf_TPMs = convert_to_TPM(read_counts, orfs, times=times)
 
     return read_counts, orf_TPMs
 

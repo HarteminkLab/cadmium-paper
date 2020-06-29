@@ -65,16 +65,14 @@ def difference(data, times=[0, 7.5, 15, 30, 60, 120]):
     return data
 
 
-def normalize_by_time(data, target_sum=None):
+def normalize_by_time(data, how='z-score'):
     """
     Scale each sample to sum over all ORFs to the target sum
     """
-    if target_sum is None:
-        # default to max sum
-        target_sum = data.sum().max()
+    if how == 'z-score':
+        scaled = (data - data.mean()) / data.std()
+    else: ValueError("Undefined normalization methods")
 
-    scale = float(target_sum) / data.sum()
-    scaled = data * scale
     return scaled
 
 

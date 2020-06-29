@@ -100,8 +100,8 @@ class MNaseSeqDensityKernel:
         self.plot(ax3)
         self.plot_length(ax4, kernel_type)
 
-        ax3.set_xlabel("position (bp)")
-        ax3.set_ylabel("length (bp)")
+        ax3.set_xlabel("Position (bp)")
+        ax3.set_ylabel("Length (bp)")
 
         # asymmetric kernel, plot only relevant region
         if kernel_type == 'triple':
