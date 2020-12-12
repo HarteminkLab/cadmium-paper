@@ -32,8 +32,7 @@ def read_input_data():
     global all_mnase_data
 
     print_fl("Reading RNA-seq...", end='')
-    rna_seq = pd.read_hdf('%s/rna_seq_dm538_543.h5.z' % rna_dir,
-                          'rna_seq_data')
+    rna_seq = pd.read_hdf(rna_seq_path, 'rna_seq_data')
     print_fl("Done.")
     timer.print_time()
     print_fl()
@@ -44,6 +43,7 @@ def read_input_data():
     print_fl("Done.")
     timer.print_time()
     print_fl()
+
 
 def determine_transcript_boundaries():
 
@@ -108,6 +108,13 @@ def compute_TPM_and_rate():
 
     from src.transcription import calculate_reads_TPM
     from src.transformations import log2_fold_change
+    from src.reference_data import read_sgd_orf_introns
+
+    # exclude introns in read counts on sense strand
+    if not INCLUDE_SENSE_INTRONS:
+        CDS_introns = read_sgd_orf_introns()
+    else:
+        CDS_introns = None
 
     # ------- Compute TPM --------------
 
@@ -115,7 +122,7 @@ def compute_TPM_and_rate():
 
     # compute read counts and TPM and save to disk as csv
     print_fl("Calculating antisense TPM...", end='')
-    anti_read_counts, anti_TPM = calculate_reads_TPM(all_orfs, rna_seq, antisense=True)
+    anti_read_counts, anti_TPM, anti_RPK = calculate_reads_TPM(all_orfs, rna_seq, antisense=True)
     anti_read_counts.to_csv('%s/antisense_read_counts.csv' % rna_dir)
     anti_TPM.to_csv('%s/antisense_TPM.csv' % rna_dir)
 
@@ -128,7 +135,8 @@ def compute_TPM_and_rate():
 
     # compute read counts and TPM and save to disk as csv
     print_fl("Calculating sense TPM...", end='')
-    read_counts, TPM = calculate_reads_TPM(all_orfs, rna_seq)
+    read_counts, TPM, RPK = calculate_reads_TPM(all_orfs, rna_seq, 
+        include_introns=INCLUDE_SENSE_INTRONS, CDS_introns=CDS_introns)
     read_counts.to_csv('%s/sense_read_counts.csv' % rna_dir)
     TPM.to_csv('%s/sense_TPM.csv' % rna_dir)
 
@@ -232,7 +240,7 @@ def main():
     2. Compute measures of TPM and TPM rate
     3. Compute MNase-seq coverage 
     4. Curate set of ORFs for analyses
-    5. Compute cross-correlation kernels for chromatin metrics
+    5. Compute cross correlation kernels for chromatin metrics
 
     Inputs:
     - RNA-seq data frame
@@ -284,6 +292,7 @@ def main():
 
     print_fl("\n--------- Cross correlation kernels ------------\n")
     calculate_kernels()
+
 
 if __name__ == '__main__':
     main()

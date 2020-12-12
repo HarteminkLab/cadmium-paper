@@ -23,9 +23,7 @@ def read_input_data():
     global all_mnase_data
 
     print_fl("Reading MNase-seq...", end='')
-    all_mnase_data = pd.read_hdf('%s/mnase_seq_merged_dm498_509_sampled.h5.z'
-        % mnase_dir, 
-        'mnase_data')
+    all_mnase_data = pd.read_hdf(mnase_seq_path, 'mnase_data')
     print_fl("Done.")
     timer.print_time()
     print_fl()
@@ -155,6 +153,30 @@ def call_p123_nucleosomes(strand='sense'):
     timer.print_time()
     print_fl()
 
+def create_suppl_data():
+    """Create chromatin data files for supplemental"""
+    from src.chromatin_metrics_data import ChromatinDataStore
+
+    # read relevant data
+    datastore = ChromatinDataStore()
+    promoter_sm_occupancy_raw = datastore.promoter_sm_occupancy_raw
+    gene_body_organization_raw = datastore.gene_body_organization_raw
+    sense_TPM = read_orfs_data('%s/sense_TPM.csv' % rna_dir)
+
+    # fix header columns
+    promoter_sm_occupancy_raw.columns = times_str
+    gene_body_organization_raw.columns = times_str
+    sense_TPM.columns = times_str
+
+    # save to disk with fixed number of sigfigs
+    promoter_sm_occupancy_raw.to_csv('%s/small_fragment_promoter_occupancy_all_times.csv'
+        % mnase_dir)
+    gene_body_organization_raw.to_csv(('%s/gene_body_nucleosome_disorganization_entropy_all_times.csv'
+        % mnase_dir), float_format='%.4f')
+
+    # save to disk with fixed number of sigfigs
+    sense_TPM.to_csv(('%s/gene_expression_TPM_all_times.csv'
+        % mnase_dir), float_format='%.4f')
 
 def main():
     """
@@ -222,6 +244,9 @@ def main():
 
     print_fl("\n------- Calculate entropy (Antisense) ----------\n")
     compute_organization_measures(strand='antisense')
+
+    print_fl("\n--------- Generate data for supplemental ------------\n")
+    create_suppl_data()
 
 if __name__ == '__main__':
     main()
