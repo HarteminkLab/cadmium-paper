@@ -33,13 +33,27 @@ class ChromatinClustering:
         act_prm = self.store.promoter_sm_occupancy_delta
         act_dorg = self.store.gene_body_disorganization_delta
 
-        prm_orfs = act_prm.mean(axis=1).sort_values(ascending=False).head(head).index
-        dorg_orfs = act_dorg.mean(axis=1).sort_values(ascending=False).head(head).index
+        mean_prm = act_prm.mean(axis=1).sort_values(ascending=False)
+        mean_dorg = act_dorg.mean(axis=1).sort_values(ascending=False)
+
+        prm_orfs = mean_prm.head(head).index
+        dorg_orfs = mean_dorg.head(head).index
 
         self.data = self.store.chromatin_data.loc[set(prm_orfs).union(set(dorg_orfs))]
 
-        print_fl("Promoter ORFs: %d\nDisorganization ORFs: %d" % \
-            (len(prm_orfs), len(dorg_orfs)))
+        def _inverse_quantile(array, val):
+            """What is the quantile of the value in the array. (CDF)"""
+            return np.mean(array <= val)
+
+        prom_quantile = _inverse_quantile(mean_prm.values, mean_prm.values[head])
+        dorg_quantile = _inverse_quantile(mean_dorg.values, mean_dorg.values[head])
+
+        print_fl("Promoter ORFs: %d (%.1f%%)\n"
+                 "Disorganization ORFs: %d (%.1f%%)" % \
+                 (len(prm_orfs),  prom_quantile*100.,
+                  len(dorg_orfs), dorg_quantile*100.
+                  ))
+
         print_fl("%d genes total" % len(self.data))
 
     def determine_k(self, ks):
@@ -381,7 +395,7 @@ class ChromatinClustering:
 
         ax.set_ylabel('Transcripts per million', fontsize=18)
         ax.set_xlabel('Cluster', fontsize=18)
-        ax.set_title('Antisense transcripts per cluster', fontsize=30)
+        ax.set_title('Antisense transcripts per cluster', fontsize=23)
 
         for x in np.arange(1, num_clusters):
             ax.axvline(x + 0.5, color='#d0d0d0', linewidth=1)
@@ -519,7 +533,7 @@ def go_bar_plot(chrom_clustering):
     ax.set_xlim(0, np.max(fdr)+3)
 
     ax.set_ylim(-len(terms)+0.5, 0.5)
-    plt.suptitle("Clustered gene ontology", fontsize=24)
+    plt.suptitle("Clustered GO terms", fontsize=28)
 
 
 def plot_silhouettes(chrom_clustering):

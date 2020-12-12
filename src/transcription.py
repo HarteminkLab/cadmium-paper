@@ -120,9 +120,9 @@ def calculate_reads_TPM(orfs, rna_seq,
 
                 read_counts.loc[idx, time] = len(cur_orf_read_counts)
 
-    orf_TPMs = convert_to_TPM(read_counts, orfs, times=times)
+    orf_RPKs, orf_TPMs = convert_to_TPM(read_counts, orfs, times=times)
 
-    return read_counts, orf_TPMs
+    return read_counts, orf_TPMs, orf_RPKs
 
 
 def convert_to_TPM(sense_reads, orfs, times=[0.0, 7.5, 15.0, 30.0, 60.0, 120.0]):
@@ -137,9 +137,11 @@ def convert_to_TPM(sense_reads, orfs, times=[0.0, 7.5, 15.0, 30.0, 60.0, 120.0])
     data = data[times]
 
     scaling = data.sum()
+
+    RPK = data.copy()
     
-    data = (data / scaling * 1e6) # scale to 1 million
-    return data
+    TPM = (data / scaling * 1e6) # scale to 1 million
+    return RPK, TPM
 
 
 def calculate_xrates(tpm, half_lives, times=[0.0, 7.5, 15.0, 30.0, 60.0, 120.0]):
@@ -217,3 +219,16 @@ def calculate_xrate(data, t_half=None, times=[0.0, 7.5, 15.0, 30.0, 60.0, 120.0]
 def _conc_eq(t, R, k, G, t1):
     """Concentration equation given time, decay rate, growth and starting time"""
     return R/k + G * np.exp(-k*(t-t1))
+
+
+# sample merged datasets so each time has `min_depth` number of reads
+def sample_rna(rna_seq_data, sample_depth, times=[0, 7.5, 15, 30, 60, 120]):
+    """Sample RNA-seq"""
+    np.random.seed(123)
+    sampled_rna_seq = pd.DataFrame()
+    for time in times:
+        cur_rna_seq = rna_seq_data[rna_seq_data.time == time].sample(sample_depth)
+        sampled_rna_seq = sampled_rna_seq.append(cur_rna_seq)
+    return sampled_rna_seq
+
+

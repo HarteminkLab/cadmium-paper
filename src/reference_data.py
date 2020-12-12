@@ -2,7 +2,7 @@
 from src.read_bam import _fromRoman
 import pandas as pd
 import numpy as np
-
+from src.utils import print_fl
 
 
 def all_orfs_TSS_PAS():
@@ -40,6 +40,7 @@ def read_park_TSS_PAS():
     TSS.loc['YDR253C', 'TSS'] = 964767
     TSS.loc['YBR294W', 'TSS'] = 789000
     TSS.loc['YLR092W', 'TSS'] = 323500
+    TSS.loc['YOL164W', 'TSS'] = 6000
 
     PAS = _read_park_gff(PAS_filename, 'PAS')
     data = TSS[['TSS']].join(PAS[['PAS']])
@@ -49,6 +50,7 @@ def read_park_TSS_PAS():
     data.loc['YDR253C', 'manually_curated'] = True
     data.loc['YBR294W', 'manually_curated'] = True
     data.loc['YLR092W', 'manually_curated'] = True
+    data.loc['YOL164W', 'manually_curated'] = True
 
     return data
 
@@ -186,3 +188,67 @@ def load_park_orf_transcript_boundaries():
     annot_tr_bounds.transcript_stop = annot_tr_bounds.transcript_stop.astype(int)
 
     return annot_tr_bounds[['chr', 'strand', 'transcript_start', 'transcript_stop']]
+
+
+def calculate_promoter_regions():
+
+    from config import OUTPUT_DIR
+
+    all_orfs = all_orfs_TSS_PAS()
+    gene_boundaries = load_park_orf_transcript_boundaries()
+    gene_boundaries = gene_boundaries.join(all_orfs[['orf_class', 'name']])
+    gene_boundaries = gene_boundaries[gene_boundaries.orf_class != 'Dubious']
+
+    # find promoter regions using gene boundaries
+    gene_boundaries = gene_boundaries.sort_values(['chr', 'transcript_start'])
+    gene_boundaries['promoter_start'] = -1
+    gene_boundaries['promoter_stop'] = -1
+
+    default_prom_size = 1000
+
+    for chrom in range(1, 17):
+        
+        chrom_genes = gene_boundaries[gene_boundaries.chr == chrom]
+        
+        for idx, gene in chrom_genes.iterrows():
+            
+            if gene.strand == '+':
+                prom_start = gene.transcript_start-default_prom_size # default promoter boundary
+                upstream_genes = chrom_genes[(chrom_genes.transcript_stop > prom_start) & 
+                                             (chrom_genes.transcript_stop < gene.transcript_start)]
+
+                # how close is the closest upstream gene
+                if len(upstream_genes) > 0:
+                    upstream_genes = upstream_genes.sort_values('transcript_stop', ascending=False)
+                    prom_start = upstream_genes.reset_index().loc[0].transcript_stop
+
+                # promoter defined by closest upstream stop and transcript start
+                gene_boundaries.loc[idx, 'promoter_start'] = prom_start
+                gene_boundaries.loc[idx, 'promoter_stop'] = gene.transcript_start
+                
+            elif gene.strand == '-':
+                prom_start = gene.transcript_stop+default_prom_size # default promoter boundary
+                upstream_genes = chrom_genes[(chrom_genes.transcript_start < prom_start) &
+                                             (chrom_genes.transcript_start > gene.transcript_stop)]
+
+                # how close is the closest upstream gene
+                if len(upstream_genes) > 0:
+                    upstream_genes = upstream_genes.sort_values('transcript_start')
+                    prom_start = upstream_genes.reset_index().loc[0].transcript_start
+
+                # promoter defined by closest upstream stop and transcript start
+                gene_boundaries.loc[idx, 'promoter_stop'] = prom_start
+                gene_boundaries.loc[idx, 'promoter_start'] = gene.transcript_stop
+
+    save_path = '%s/calculated_promoters.csv' % OUTPUT_DIR
+    gene_boundaries.to_csv(save_path)
+    print_fl("Saved to %s" % save_path)
+    return gene_boundaries
+
+
+def load_calculated_promoters():
+    from config import OUTPUT_DIR
+    gene_boundaries = pd.read_csv('%s/calculated_promoters.csv' % 
+        OUTPUT_DIR).set_index('orf_name')
+    return gene_boundaries
+

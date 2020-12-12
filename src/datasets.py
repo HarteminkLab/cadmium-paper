@@ -11,14 +11,14 @@ def create_orfs_time_df(orf_idxs, times=[0.0, 7.5, 15, 30, 60, 120], columns=[])
     return df
 
 
-def read_orfs_data(filename=None):
+def read_orfs_data(filename=None, index_name='orf_name'):
     """
     Load ORFs data set with time columns converting time columns from string
     to integers if necessary. Assumes file is a csv with columns. Assumes there
     is an orf_name column that can be set as the index.
     """
 
-    data = pd.read_csv(filename).set_index('orf_name')
+    data = pd.read_csv(filename).set_index(index_name)
     times = [0, 7.5, 15, 30, 60, 120]
     
     non_time_cols = list(data.columns)

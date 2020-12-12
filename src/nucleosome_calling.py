@@ -37,7 +37,7 @@ def call_orf_nucleosomes(cross_correlation, orf):
 def call_nucleosomes(data):
 
     cutoff = 0.02
-    window = 150
+    window = 160
     window_2 = window/2
 
     cur_data = data.sort_values(ascending=False).copy()
@@ -61,7 +61,6 @@ def call_nucleosomes(data):
         last_nuc = highest
 
     return nucleosomes_df
-
 
 
 

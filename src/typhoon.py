@@ -25,6 +25,17 @@ from src.math_utils import nearest_span
 from src.reference_data import read_sgd_orf_introns
 
 
+def get_plotter():
+    from config import mnase_seq_path, pileup_path
+    from src.reference_data import all_orfs_TSS_PAS
+
+    all_orfs = all_orfs_TSS_PAS()
+    plotter = TyphoonPlotter(mnase_path=mnase_seq_path,
+                             rna_seq_pileup_path=pileup_path,
+                             orfs=all_orfs)
+    return plotter
+
+
 class TyphoonPlotter:
 
     def __init__(self, mnase_path=None, 
@@ -51,6 +62,7 @@ class TyphoonPlotter:
 
     def set_config(self):
 
+        self.custom_times = None
         self.motifs = {}
         self.figwidth = 8
         self.show_rna = True
@@ -62,6 +74,7 @@ class TyphoonPlotter:
         self.show_spines = True
         self.show_minor_ticks = False
         self.titles = None
+        self.titlesize = 48
         self.linkages = []
         self.plot_tick_labels = True
         self.vmax = 0.00004
@@ -83,7 +96,8 @@ class TyphoonPlotter:
 
             if not self.disable_mnase_seq:
                 self.cur_mnase = filter_mnase(self.all_mnase_data, span[0], span[1], chrom, 
-                                             length_select=(0, 250))
+                                             length_select=(0, 250), use_cache=False)
+                # print(self.cur_mnase)
             else:
                 self.cur_mnase = self.all_mnase_data.head(0)
 
@@ -92,13 +106,13 @@ class TyphoonPlotter:
 
         self.orfs_plotter.set_span_chrom(span, chrom)
 
-    def plot(self, dpi=150):
+
+    def plot(self, dpi=150, figwidth=8):
         """Plot the typhoon plot, RNA-seq pileup and annotations for the given
         span window and chromosome for each time"""
 
         # configuration
         times = self.times
-        figwidth = self.figwidth
         show_rna = self.show_rna
         show_orfs = self.show_orfs
         title = self.title
@@ -124,7 +138,7 @@ class TyphoonPlotter:
         if title is None: 
             title = "chr{} {}...{}".format(chrom, start, end)
         elif len(title) > 0:
-            plt.suptitle(title, fontsize=48)
+            plt.suptitle(title, fontsize=self.titlesize)
 
         annotation_axes = []
         legend_items = []
@@ -133,6 +147,13 @@ class TyphoonPlotter:
         # plot the midpoints
         for i in range(len(times)):
             time = times[i]
+
+            if self.custom_times is not None:
+                if i > len(self.custom_times)-1:
+                    break
+                else:
+                    time = self.custom_times[i]
+
             if titles is None: title = '{0:.3g}$^{{\\prime}}$'.format(time)
             else: title = titles[i]
             ax = time_axes[i]
@@ -143,18 +164,14 @@ class TyphoonPlotter:
             self.plot_typhoon_time(ax, time_mnase, time)
             ax.set_title(title, fontsize=24)
 
-            j = 0
-            motif_names = list(sorted(self.motifs.keys()))
-            for motif_name in motif_names:
-                motif = self.motifs[motif_name]
-                motif_sc = ax.scatter(motif['mid'], 20, marker=motif['marker'], 
-                    facecolor=motif['color'], edgecolor='black',
-                    linewidth=0.75, s=80, label=motif_name, zorder=102)
-                j += 1
+            if self.motifs != {}:
+                motifs = self.motifs
+
+                motif_scs, motif_names = plot_motifs(ax, motifs)
 
                 if i == 0:
-                    legend_items.append(motif_sc)
-                    legend_labels.append(motif_name)
+                    legend_items = motif_scs
+                    legend_labels = motif_names
 
         if self.show_orfs:
             self.orfs_plotter.plot_orf_annotations(orf_ax)
@@ -184,7 +201,7 @@ class TyphoonPlotter:
 
         time_axes[-1].legend(legend_items, legend_labels, loc='upper left',
             bbox_to_anchor=(-0.2, -0.5), columnspacing=1,
-            frameon=False, fontsize=20, ncol=4)
+            frameon=False, fontsize=24, ncol=3)
 
         if output is not None:
             # fig.patch.set_facecolor('blue')
@@ -200,11 +217,15 @@ class TyphoonPlotter:
         Setup figure for time series subplots with connecting plots between
         """
 
-        plot_utils.apply_global_settings(titlepad=10, linewidth=2.5, dpi=self.dpi)
-
         # configuration
         times = self.times
         n = len(times)
+
+        titlepad = 10
+
+        plot_utils.apply_global_settings(titlepad=titlepad, 
+            linewidth=2.5, dpi=self.dpi)
+
         figwidth = self.figwidth
         show_rna = self.show_rna
         show_orfs = self.show_orfs
@@ -267,21 +288,30 @@ class TyphoonPlotter:
         if True:
             draw_legend(leg_ax, plot_span)
 
-        fig.tight_layout(rect=[0.075, 0.1, 0.95, 0.945])
+
+        # more padding for title for smaller plots
+        if n == 3:
+            fig.tight_layout(rect=[0.075, 0.1, 0.95, 0.93])
+        else:
+            fig.tight_layout(rect=[0.075, 0.1, 0.95, 0.945])
+
         plt.subplots_adjust(hspace=0.0, wspace=0.5)
 
         time_axes[-1].set_xlabel("Position (bp)", fontsize=24)
 
         if len(time_axes) > 2:
-            time_axes[2].set_ylabel("Fragment length (bp)", fontsize=24, labelpad=10)
+            label_idx = max(len(time_axes)/2 - 1, 1)
+            time_axes[label_idx].set_ylabel("Fragment length (bp)", fontsize=24, labelpad=10)
 
         return fig, time_axes, tween_axes, orf_ax, rna_ax
 
-    def plot_typhoon_time(self, ax, plot_data, time, scale_z=False):
+    def plot_typhoon_time(self, ax, plot_data, time, scale_z=False, vmax=None):
         """Plot the typhoon plot for a single time"""
 
         # configuration
-        vmax = self.vmax
+        if vmax is None:
+            vmax = self.vmax
+
         samples=-1
         xticks_interval = (500, 100)
         plot_tick_labels = True
@@ -361,22 +391,40 @@ class TyphoonPlotter:
         return ax
 
 
-    def plot_gene(self, gene_name, save_dir=None, figwidth=10,
+    def plot_gene(self, gene_name, save_dir=None, figwidth=8,
             padding=(1000, 1500), highlight=True, 
             custom_highlight_regions=None, dpi=100,
-            should_plot_motifs=False, prefix=''):
+            tf_peaks=None, times=[0, 7.5, 15, 30, 60, 120],
+            motif_keep=None,
+            should_plot_motifs=None, prefix=''):
 
         self.dpi = dpi
+        self.times = times
         orf_name = get_orf_name(gene_name)
 
+        # plot motifs
+        motifs = {}
         if should_plot_motifs is not None:
-
             if type(should_plot_motifs) == list:
                 filter_tfs = should_plot_motifs
-
             else: filter_tfs = None
             motifs = load_motif_plot_dic(orf_name, filter_tfs=filter_tfs)
+
+            # filter out motifs if not in keep list
+            if motif_keep is not None:
+
+                for k, v in motifs.items():
+
+                    mids = v['mid']
+                    new_mids = []
+                    for mid in mids:
+                        if mid in motif_keep:
+                            new_mids.append(mid)
+
+                    motifs[k]['mid'] = new_mids
+
         else: motifs = {}
+        self.motifs = motifs
 
         if orf_name not in self.orfs.index: return
         gene = self.orfs.loc[orf_name]
@@ -420,27 +468,52 @@ class TyphoonPlotter:
         if save_dir is not None:
             self.output = write_path
 
-        ret = self.plot(dpi=dpi)
+        ret = self.plot(dpi=dpi, figwidth=figwidth)
 
         if save_dir is not None:
             print_fl("Writing %s" % write_path)
 
         return ret
 
-    def plot_genes(self, genes, save_dir, save_all_motifs_dir,
-                   figwidths={}, paddings={}, dpi=100):
+    def plot_genes(self, genes, save_dir, save_all_motifs_dir=None,
+                   times=[0, 7.5, 15, 30, 60, 120], 
+                   figwidths={}, paddings={}, dpi=100,
+                    default_figwidth=8, titlesize=48):
+
+        self.figwidth = default_figwidth
+        self.titlesize = titlesize
 
         plot_motifs_dic = {
             'all': ['MET31', 'MET32', 'MET28', 'CBF1', 'MET4', 'HSF1'],
-            'MCD4': ['ZAP1', 'SNF1']
-        }
-            
-        for gene_name in genes:
+            'MCD4': ['ZAP1', 'SNF1'],
+            'SER33': ['MET4', 'GCR2', 'RCS1', 'AFT2', 'MET32', 'GCR1'],
+            'ENB1': ['MET4', 'RCS1', 'AFT2', 'MET32', 'CBF1', 'MET31'],
+            'LEE1': ['MET4', 'RCS1', 'AFT2', 'CBF1'],
+            'RPS7A': [],
+            'CKB1': [],
+            'UTR2': [],
+            'MET31': ['MET31', 'MET32']
 
+        }
+
+        tfs_motif_keep = {
+            'ENB1': [21445],
+            'LEE1': [455290],
+            'PDC6': [653438.5, 653283.5],
+            'HSP26': [381682.5, 381447.5],
+            'MCD4': [141034, 140788]
+        }
+
+        for gene_name in genes:
 
             plot_tfs_list = plot_motifs_dic['all']
             if gene_name in plot_motifs_dic.keys():
                 plot_tfs_list = plot_motifs_dic[gene_name]
+
+            # custom motifs to keep in plot
+            motif_keep = None
+            if gene_name in tfs_motif_keep.keys():
+                motif_keep = tfs_motif_keep[gene_name]
 
             figwidth = self.figwidth
             padding = 1000, 1500
@@ -451,13 +524,15 @@ class TyphoonPlotter:
             # save with selected TF motifs
             self.plot_gene(gene_name, save_dir,
                            figwidth=figwidth, padding=padding, 
-                           should_plot_motifs=plot_tfs_list,
-                           dpi=dpi)
+                           should_plot_motifs=plot_tfs_list, 
+                           motif_keep=motif_keep,
+                           dpi=dpi, times=times)
 
             # save all TF motifs
-            self.plot_gene(gene_name, save_all_motifs_dir,
-                           figwidth=figwidth, padding=padding, 
-                           dpi=dpi, should_plot_motifs=True)
+            if save_all_motifs_dir is not None:
+                self.plot_gene(gene_name, save_all_motifs_dir,
+                               figwidth=figwidth, padding=padding, 
+                               dpi=dpi, should_plot_motifs=True, times=times)
 
 
 def _interp(x1, x2, y1, y2):
@@ -572,6 +647,7 @@ def draw_example_mnase_seq(plotter, save_dir):
     fig.tight_layout(rect=[0.1, 0.1, 0.95, 0.945])
     plt.subplots_adjust(hspace=0.0, wspace=0.5)
 
+    plotter.set_span_chrom(span, 2)
     plotter.plot_typhoon_time(ax, data, 0, scale_z=True)
     ax.set_xlim(*span)
     ax.set_xticks(np.arange(span[0], span[1], 500))
@@ -728,9 +804,10 @@ def load_motif_plot_dic(orf_name=None, filter_tfs=None):
     from config import mnase_dir
     from src.colors import parula
 
-    found_motifs = pd.read_csv('%s/found_motifs.csv'% mnase_dir)
+    found_motifs = pd.read_csv('%s/found_motifs.csv'% mnase_dir)\
+        [['motif_mid', 'tf', 'target']]
     motifs_tfs = found_motifs.tf.unique()
-    motifs_tfs, colors, color_dic = motif_colors(motifs_tfs)
+    colors, color_dic = motif_colors()
 
     if orf_name is not None:
         found_motifs = found_motifs[found_motifs.target == orf_name]
@@ -738,25 +815,89 @@ def load_motif_plot_dic(orf_name=None, filter_tfs=None):
     if filter_tfs is not None:
         found_motifs = found_motifs[found_motifs.tf.isin(filter_tfs)]
 
+    return create_motif_plot_dic(found_motifs)
+
+
+def create_motif_plot_dic(found_motifs):
+
     tfs = {}
     i = 0
 
     markers = ['D']
+    colors, color_dic = motif_colors(found_motifs.tf.unique())
 
     for idx, row in found_motifs.iterrows():
-        tfs[row.tf] = {'mid': row.motif_mid, 'color': color_dic[row.tf], 'marker': '^'}
+
+        if row.tf in tfs.keys():
+            mids = tfs[row.tf]['mid']
+        else: mids = []
+
+        mids.append(row.motif_mid)
+
+        tfs[row.tf] = {'mid': list(set(mids)), 'color': color_dic[row.tf], 'marker': '^'}
         i += 1
+
+    # combine RCS1(Aft1) and AFT2 if needed
+    if 'RCS1' in tfs.keys() and 'AFT2' in tfs.keys():
+        
+        rcs_mids = set(tfs['RCS1']['mid'])
+        aft2_mids = set(tfs['AFT2']['mid'])
+
+        both_mids = rcs_mids.intersection(aft2_mids)
+        rcs_only_mids = list(rcs_mids - both_mids)
+        aft2_only_mids = list(aft2_mids - both_mids)
+
+        new_tfs = tfs['RCS1'].copy()
+        new_tfs['mid'] = list(both_mids)
+        new_tfs['color'] = plt.get_cmap('Reds')(0.8)
+
+        tfs['RCS1']['mid'] = rcs_only_mids
+        tfs['AFT2']['mid'] = aft2_only_mids
+        tfs['Aft1/Aft2'] = new_tfs
+
     return tfs
 
 
 def motif_tf_priorities(motifs_tfs):
     motifs_tfs = sorted(motifs_tfs, key=lambda x: 
-                        (1, x) if x not in ['MET31', 'MET32', 'MET4', 'HSF1', 'CBF1'] 
+                        (1, x) if x not in ['MET31', 'MET32', 'MET4', 'HSF1', 
+                            'CBF1', 'RCS1', 'AFT2'] 
                         else (0, x))
     return motifs_tfs
 
 
-def motif_colors(motifs_tfs):
+def plot_motifs(ax, motifs):
+    motif_names = list(sorted(motifs.keys()))
+    motif_scs = []
+    motif_names_disp = []
+
+    for motif_name in motif_names:
+        motif = motifs[motif_name]
+
+        if len(motif['mid']) == 0: continue
+
+        motif_name = motif_name.replace('RCS1', 'Aft1')
+        motif_name = motif_name.title()
+
+        for mid in motif['mid']:
+            motif_sc = ax.scatter(mid, 20, marker=motif['marker'], 
+                facecolor=motif['color'], edgecolor='black',
+                linewidth=0.5, s=100, label=motif_name, zorder=102)
+
+        motif_scs.append(motif_sc)
+        motif_names_disp.append(motif_name)
+
+    return motif_scs, motif_names_disp
+
+
+def motif_colors(motifs_tfs=None):
+    
+    from config import mnase_dir
+
+    if motifs_tfs is None:
+        found_motifs = pd.read_csv('%s/found_motifs.csv'% mnase_dir)\
+            [['motif_mid', 'tf', 'target']]
+        motifs_tfs = found_motifs.tf.unique()
 
     cmap = plt.get_cmap('Spectral')
     n = len(motifs_tfs)
@@ -764,11 +905,17 @@ def motif_colors(motifs_tfs):
     
     fixed_colors = [cmap(0.1), cmap(0.45), cmap(0.7), cmap(0.8), cmap(0.9)]
     k = len(fixed_colors)
-    rest_colors = cmap(np.linspace(0, 1, n-k))
 
-    colors = np.concatenate([fixed_colors, rest_colors])
+    if n > k:
+        rest_colors = cmap(np.linspace(0, 1, n-k))
+        colors = np.concatenate([fixed_colors, rest_colors])
+    else:
+        colors = fixed_colors
+
     color_dic = {}
-    for i in range(len(colors)):
+
+    for i in range(len(motifs_tfs)):
         color_dic[motifs_tfs[i]] = colors[i]
-    
-    return motifs_tfs, colors, color_dic
+    color_dic['RCS1'] = plt.get_cmap('Reds')(0.5)
+
+    return colors, color_dic

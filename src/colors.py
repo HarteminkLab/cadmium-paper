@@ -4,7 +4,6 @@ from matplotlib import collections as mc
 from matplotlib.colors import ListedColormap
 
 
-
 def parula(r=False):
     cm_data = [[0.2081, 0.1663, 0.5292], [0.2116238095, 0.1897809524, 0.5776761905], 
      [0.212252381, 0.2137714286, 0.6269714286], [0.2081, 0.2386, 0.6770857143], 
@@ -54,3 +53,15 @@ def parula(r=False):
     parula_map = LinearSegmentedColormap.from_list('parula', cm_data)
 
     return parula_map
+
+def red(v=0.75):
+    return plt.get_cmap('Reds')(v)
+
+def blue(v=0.75):
+    return plt.get_cmap('Blues')(v)
+
+def purple(v=0.75):
+    return plt.get_cmap('Purples')(v)
+
+
+

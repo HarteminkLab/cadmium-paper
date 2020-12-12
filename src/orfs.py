@@ -14,7 +14,7 @@ def determine_paper_set(orfs, TSSs, half_lives, mnase_coverage):
     def _filter_orfs(old_orfs, orfs):
         return orfs, "%d (%d)" % (len(orfs), (len(orfs)-len(old_orfs)))
 
-    print_fl("SacCer2:                    %d" % len(orfs), log=True)
+    print_fl("SacCer3:                    %d" % len(orfs), log=True)
 
     orfs, summary = _filter_orfs(orfs, 
                         orfs[(orfs['orf_class'] == 'Uncharacterized') | 

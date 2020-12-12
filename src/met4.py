@@ -81,7 +81,8 @@ def plot_timecourse(data_store):
     ax.set_xlim(-0.2, 5.2)
     ax.set_ylim(-0.5, 5)
 
-    ax.set_title('Sulfur pathway\ntime course', fontdict={'family':'Open Sans'}, fontsize=18)
+    ax.set_title('Sulfur pathway\ntime course', 
+        fontdict={'family':'Open Sans'}, fontsize=20)
     ax.legend(bbox_to_anchor=(0.45, -0.15),
               frameon=False, fontsize=12)
 

@@ -145,7 +145,8 @@ def plot_compare(data, markers, colors, fill_styles, metric='r2',
         x_pos = x - spacing*(n_models-1)/2. + spacing*i
         
         ax.plot(x_pos, model_data, marker=markers[i],
-            color=colors[i], label=label, markersize=7, alpha=1.,
+            color=colors[i], label=label.replace('Promoter occupancy', 
+                'Small fragment occupancy'), markersize=7, alpha=1.,
             fillstyle=fill_styles[i], linewidth=0,
             zorder=10)
 
@@ -197,7 +198,7 @@ def load_results(parent_dir):
                        'Full']].copy()
     return results
 
-def plot_compare_r2(parent_dir):
+def plot_compare_r2(parent_dir, show_legend=False):
 
     results = load_results(parent_dir)
 
@@ -226,7 +227,8 @@ def plot_compare_r2(parent_dir):
 
     plot_compare(results, markers, colors, fill_styles, 
                  rename={'Combined chromatin': 
-                 "Promoter occupancy +\nNucleosome disorganization"})
+                 "Small fragment occupancy +\nNucleosome disorganization"},
+                 show_legend=show_legend)
     
 
 def main():

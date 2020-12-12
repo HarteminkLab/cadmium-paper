@@ -13,6 +13,7 @@ from chromatin_metrics_data import ChromatinDataStore
 from src.timer import TimingContext, Timer
 from sklearn.metrics import r2_score
 from pandas.core.series import Series
+from scipy.stats import pearsonr 
 from src.datasets import read_orfs_data
 from src.transformations import difference
 from src.chromatin_metrics_data import pivot_metric, add_suffix
@@ -21,7 +22,7 @@ from sklearn import preprocessing
 from src.plot_utils import plot_density_scatter
 from src.utils import print_fl
 from src.colors import parula
-
+from src.math_utils import convert_to_latex_sci_not
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
 from sklearn.gaussian_process.kernels import WhiteKernel
@@ -467,10 +468,11 @@ def plot_res_distribution(model, predict_abs_TPM=True, selected_genes=[]):
 
 
 def plot_res_distribution_time(model, time, predict_abs_TPM=True, 
-    ax=None, selected_genes=[]):
+    ax=None, selected_genes=[], show_pearsonr=True, plot_aux='both', 
+    show_r2=False, tight_layout=None):
 
-    x = model.Y[time]
-    y = model.Y_predict[time]
+    y = model.Y[time]
+    x = model.Y_predict[time]
 
     if predict_abs_TPM:
         label = "log$_2$ transcript level, TPM"
@@ -480,8 +482,19 @@ def plot_res_distribution_time(model, time, predict_abs_TPM=True,
         lims = (-15, 15)
 
     if ax is None:
-        title = ("%s model predictions\n %s', $R^2$=%.2f" % 
-                 (model.name, str(time), model.r2.loc[time]))
+
+        title = ("%s model predictions\n %s min" % 
+                 (model.name, str(time)))
+
+        if pearsonr:
+            cor, pval = pearsonr(x, y)
+            pval = convert_to_latex_sci_not(pval)
+            title = ("%s, Pearson's r=%.2f, p=%s" % 
+                    (title, cor, pval))
+
+        if show_r2:
+            title = ("%s', $R^2$=%.2f" % 
+                     (title, model.r2.loc[time]))
     else:
         title = ("%s', $R^2$=%.2f" % 
                  (str(time), model.r2.loc[time]))
@@ -495,8 +508,8 @@ def plot_res_distribution_time(model, time, predict_abs_TPM=True,
         }
 
     model = plot_distribution(x, y, 
-                              'True %s' % label,
                               'Predicted %s' % label,
+                              'True %s' % label,
                               highlight=selected_genes,
                               title=title,
                               xlim=lims,
@@ -505,7 +518,8 @@ def plot_res_distribution_time(model, time, predict_abs_TPM=True,
                               ystep=5,
                               pearson=False, 
                               highlight_format=custom_formatting,
-                              ha='right', plot_aux='both', ax=ax)
+                              tight_layout=tight_layout,
+                              ha='right', plot_aux=plot_aux, ax=ax)
 
 def select_time_columns(columns, time, 
     times=[0, 7.5, 15, 30, 60, 120], snap_shot_time=True):

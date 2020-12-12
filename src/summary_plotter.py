@@ -44,13 +44,16 @@ class SummaryPlotter:
         # normalize
         self.orf_cc = self.orf_cc / self.cc_bp_std
 
-    def plot_cross_correlation_heatmap(self, show_colorbar=False, title='', nucs=None):
+    def plot_cross_correlation_heatmap(self, show_colorbar=False, title='', 
+        nucs=None, large_font=False):
+
         return self.plot_df_heatmap(data=self.orf_cc*-1,
-            show_colorbar=show_colorbar, title=title, shaded=(-200, 500), nucs=nucs)
+            show_colorbar=show_colorbar, title=title, shaded=(-200, 500), 
+            nucs=nucs, large_font=large_font)
 
     def plot_df_heatmap(self, data, show_colorbar=False, title='', 
         vlims=[-3, 3], cmap='Spectral_r', cbarticks=1, cbarscale=1.,
-        shaded=(-200, 500), nucs=None):
+        shaded=(-200, 500), nucs=None, large_font=False):
 
         fig, ax = plt.subplots(1, 1, figsize=(8, 3))
         fig.tight_layout(rect=[0.075, 0.03, 0.8, 0.945])
@@ -82,7 +85,12 @@ class SummaryPlotter:
 
         ax.axvline(x=0, color='black', linewidth=1)
         plot_utils.format_ticks_font(ax, fontsize=16)
-        ax.set_title(title, fontsize=24)
+
+        if large_font:
+            ax.set_title(title, fontsize=26)
+        else:
+            ax.set_title(title, fontsize=20)
+
         ax.set_xlim(-600, 600)
 
         if nucs is not None:
@@ -120,7 +128,8 @@ class SummaryPlotter:
 
         return fig
 
-    def plot_lines(self, orf_name, title='', lims=(None, None, None)):
+    def plot_lines(self, orf_name, title='', lims=(None, None, None),
+                   large_font=False):
 
         fig, dis_ax = plt.subplots(1, 1, figsize=(8, 7))
         fig.tight_layout(rect=[0.15, 0.3, 0.9, 0.9])
@@ -153,7 +162,7 @@ class SummaryPlotter:
         sm_line = sm_ax.plot(time_indices,
                              sm_values, marker='P', markersize=11,
                              color=sm_color, lw=2.5, linestyle='dotted',
-                             label='Promoter occupancy')
+                             label='Small fragment occupancy')
 
         xrate_line = x_rate_ax.plot(time_indices,
             self.store.transcript_rate_logfold.loc[orf_name].values, 
@@ -173,7 +182,10 @@ class SummaryPlotter:
         else:
             lim_type = None
 
-        sm_ax.set_title(title, fontsize=28)
+        if large_font:
+            sm_ax.set_title(title, fontsize=28)
+        else:
+            sm_ax.set_title(title, fontsize=22)
 
         # format x axis
         sm_ax.set_xticks(time_indices)
@@ -181,14 +193,14 @@ class SummaryPlotter:
         sm_ax.set_xlim(-0.25, 5.25)
 
         format_line_ax(sm_ax, sm_color, 
-            '$\\Delta$ promoter occupancy', lim_type=lim_type,
+            '$\\Delta$ small fragment occupancy', lim_type=lim_type,
             lims=lims[0])
         format_line_ax(dis_ax, disorg_color, 
             '$\\Delta}$ nucleosome disorganization',
             lim_type=lim_type,
             lims=lims[0])
         format_xrate_ax(x_rate_ax, xrate_color, 
-            'Log$_2$ fold-change transcription Rate', lim_type=lim_type,
+            'Log$_2$ fold-change transcription rate', lim_type=lim_type,
             lims=lims[1])
 
         sm_ax.spines['right'].set_edgecolor(xrate_color)
@@ -214,12 +226,12 @@ class SummaryPlotter:
         return fig
 
     def write_gene_plots(self, genes, cc_dir, lines_dir, show_plot=True,
-        custom_lims={}):
+        custom_lims={}, suffix='', large_font=False):
 
         for gene_name in genes:
             
             # create heatmaps of the cross correlation for each gene
-            write_path = "%s/%s.pdf" % (cc_dir, gene_name)
+            write_path = "%s/%s%s.pdf" % (cc_dir, gene_name, suffix)
             
             try: self.set_gene(gene_name)
             except KeyError:
@@ -227,7 +239,8 @@ class SummaryPlotter:
                 continue
             
             fig = self.plot_cross_correlation_heatmap(show_colorbar=True,
-                title='%s cross correlation' % gene_name)
+                title='%s cross correlation' % gene_name, 
+                large_font=large_font)
             plt.savefig(write_path, transparent=False)
 
             # close plots
@@ -241,9 +254,10 @@ class SummaryPlotter:
             else: lims = (None, None, None)
 
             # plot lines plots of time course
-            write_path = "%s/%s.pdf" % (lines_dir, gene_name)
+            write_path = "%s/%s%s.pdf" % (lines_dir, gene_name, suffix)
             fig = self.plot_lines(self.gene.name,
-                title='%s time course' % gene_name, lims=lims)
+                title='%s time course' % gene_name, lims=lims, 
+                large_font=large_font)
             plt.savefig(write_path, transparent=False)
             
             # close

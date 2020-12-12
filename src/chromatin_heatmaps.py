@@ -28,7 +28,6 @@ class ChromatinHeatmaps:
         plot_utils.apply_global_settings(linewidth=3)
 
     def plot_colorbars(self, write_path=None):
-
         fig, axs = plt.subplots(2, 1, figsize=(8,2))
         plt.subplots_adjust(hspace=0.0, wspace=0.0)
         fig.subplots_adjust(left=0.5)
@@ -37,7 +36,7 @@ class ChromatinHeatmaps:
 
         ax1, ax2 = tuple(axs)
 
-        titles = ['$\\Delta$ Promoter occupancy /\n$\\Delta$ Disorganization',
+        titles = ['$\\Delta$ Small fragment occupancy /\n$\\Delta$ Disorganization',
                   'Log$_2$ fold-change\ntranscription rate']
         scale_cbars = [1, 1, 1]
         for i in range(len(axs)):
@@ -318,9 +317,10 @@ def _add_vline(lines, x, ys):
     lines.append(((x, ys[0]), (x, ys[1])))
 
 
-def _make_fake_cbar(ax, vlim, title, scale=1, cmap='RdBu_r'):
+def _make_fake_cbar(ax, vlim, title, scale=1, cmap='RdBu_r', 
+    str_format='%.0f'):
     """Make fake cbar by drawing gradient box"""
-    
+
     Y = np.linspace(-vlim, vlim, 100)
 
     data = np.array(Y).reshape(len(Y),1).T
@@ -335,10 +335,7 @@ def _make_fake_cbar(ax, vlim, title, scale=1, cmap='RdBu_r'):
     ax.set_xticks(np.linspace(-10, 10, 5))
 
     ticklabel_values = np.linspace(-vlim, vlim, 5) * scale
-    ticklabels = ['%.0f' % t for t in ticklabel_values]
+    ticklabels = [str_format % t for t in ticklabel_values]
     ticklabels[0] = '<' + ticklabels[0]
     ticklabels[-1] = '>' + ticklabels[-1]
     ax.set_xticklabels(ticklabels)
-
-    # ax.set_title(title)
-

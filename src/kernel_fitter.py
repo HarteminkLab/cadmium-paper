@@ -125,11 +125,11 @@ def compute_triple_kernel(nuc_kernel):
     return triple_peak_kernel
 
 
-def compute_nuc_kernel(all_mnase_data, brogaard):
+def compute_nuc_kernel(all_mnase_data, brogaard, top=2500):
 
-    # Get MNase-seq data @ 0 min for top 1000 nucleosomes
+    # Get MNase-seq data @ 0 min for top 2500 nucleosomes
     mnase_seq_0 = filter_mnase(all_mnase_data, time=0.0)
-    top_brogaard = brogaard.head(2500)
+    top_brogaard = brogaard.head(top)
 
     brogaard_mnase = collect_mnase(mnase_seq_0, window=200, pos_chr_df=top_brogaard)
 

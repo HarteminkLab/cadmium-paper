@@ -71,7 +71,8 @@ def format_ticks_font(ax, fontname='Open Sans', weight='regular',
         tick.set_fontsize(fontsize=fontsize)
 
 def plot_rect(ax, x, y, width, height, color=None, facecolor=None, 
-    edgecolor=None, ls='solid', fill_alpha=1., zorder=40, lw=0.0, inset=(0.0, 0.0)):
+    edgecolor=None, ls='solid', fill_alpha=1., zorder=40, lw=0.0, 
+    inset=(0.0, 0.0), fill=True, joinstyle='round'):
     """
     Plot a rectangle for ORF plotting
     """
@@ -86,9 +87,9 @@ def plot_rect(ax, x, y, width, height, color=None, facecolor=None,
                         facecolor=facecolor,
                         edgecolor=edgecolor,
                         lw=lw,
-                        joinstyle='round',
+                        joinstyle=joinstyle,
                         ls=ls,
-                        fill=True,
+                        fill=fill,
                         alpha=fill_alpha,
                         zorder=zorder
                     ))
@@ -112,7 +113,7 @@ def plot_density_scatter(x, y, bw, cmap='magma_r', vmin=None,
         kde = sm.nonparametric.KDEMultivariate(data=[x, y], var_type='cc', bw=bw)
         z = kde.pdf([x, y])
     except ValueError:
-        z = [0] * len(x)
+        z = np.array([0] * len(x))
 
     if ax is None:
         fig, ax = plt.subplots(figsize(4,4))
@@ -121,8 +122,10 @@ def plot_density_scatter(x, y, bw, cmap='magma_r', vmin=None,
     x, y, z = x[sorted_idx], y[sorted_idx], z[sorted_idx]
 
     # ax.scatter(x, y, c='', edgecolor='#c0c0c0', s=(s-1), zorder=2)
-    ax.scatter(x, y, c=z, edgecolor='', s=s, cmap=cmap, vmin=vmin, 
+    scatter = ax.scatter(x, y, c=z, edgecolor='', s=s, cmap=cmap, vmin=vmin, 
         vmax=vmax, alpha=alpha, zorder=zorder, rasterized=True)
+
+    return ax, scatter
 
 
 
@@ -145,6 +148,7 @@ def plot_density(data, ax=None, color='red', arange=None,
         arange = min(data), max(data), 1
 
     x = np.arange(arange[0], arange[1], arange[2])
+
     y = _kde_sklearn(data, x, bw) * mult
     d = scipy.zeros(len(y))
     fill_mask = y >= d

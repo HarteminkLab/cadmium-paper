@@ -14,7 +14,7 @@ def time_to_index(time):
         indices[times[i]] = i
     return indices[time]
 
-def print_fl(val='', end='\n', log=False):
+def print_fl(val='', end='\n', log=True):
 
     contents = str(val) + end
 
@@ -112,9 +112,15 @@ def get_std_cutoff(data, std_cutoff=1.5):
     return data[select]
 
 
-def run_cmd(bashCommand):
-    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
-    output, error = process.communicate()
+def run_cmd(bashCommand, stdout_file=None):
+    if stdout_file is not None:
+        with open(stdout_file, 'w') as output:
+            process = subprocess.Popen(bashCommand.split(), stdout=output) 
+            output, error = process.communicate()
+    else:
+        process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+        output, error = process.communicate()
+
     return output, error
 
 
@@ -135,3 +141,9 @@ def mkdir_safe(directory, log=True):
 def flip_strand(strand):
     if strand == '+': return '-'
     else: return '+'
+
+
+def write_str_to_path(string, path):
+    with open(path, 'w') as file:
+        file.write(string)
+

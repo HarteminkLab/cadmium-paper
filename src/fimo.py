@@ -160,26 +160,31 @@ def find_reg_motifs(fimo, orf, where='TSS', window=(-200, 0)):
     return met32_motif_loc
 
 
-def find_relevant_gene_motifs(fimo, orfs):
+def find_relevant_gene_motifs(fimo, orfs, genes=None):
     from src.met4 import all_genes
     from src.gene_list import get_gene_list
     from src.utils import get_gene_named
     from config import mnase_dir
     from src.fimo import find_reg_motifs
 
-    TSS_genes = all_genes() + get_gene_list()
-    PAS_genes = ['MET31']
+    if genes is None:
+        TSS_genes = all_genes() + get_gene_list()
+        PAS_genes = ['MET31']
+    else:
+        TSS_genes = genes
+        PAS_genes = []
 
     found_motifs = pd.DataFrame()
 
     for gene_name in PAS_genes:
         orf = get_gene_named(gene_name, orfs)
-        cur_found = find_reg_motifs(fimo, orf, where='PAS', window=(0, 400))
+        cur_found = find_reg_motifs(fimo, orf, where='PAS', window=(0, 1000))
         found_motifs = found_motifs.append(cur_found)
         
     for gene_name in TSS_genes:
+        # print(gene_name)
         orf = get_gene_named(gene_name, orfs)
-        cur_found = find_reg_motifs(fimo, orf, where='TSS', window=(-400, 0))
+        cur_found = find_reg_motifs(fimo, orf, where='TSS', window=(-1000, 0))
         found_motifs = found_motifs.append(cur_found)
 
     found_motifs = found_motifs[found_motifs.tf != 'AZF1'].reset_index(drop=True)

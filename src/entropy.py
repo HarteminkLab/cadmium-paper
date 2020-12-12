@@ -46,9 +46,12 @@ def calc_entropy_2d(nuc_poss, base=2):
 
 
 
-def load_orf_entropies_by_cc_type(cc_type, strand_name):
+def load_orf_entropies_by_cc_type(cc_type, strand_name, mnase_seq_dir=None):
 
-    path = '%s/orf_%s_entropies.csv' % (mnase_dir, strand_name)
+    if mnase_seq_dir is None:
+        mnase_seq_dir = mnase_dir # load from config
+
+    path = '%s/orf_%s_entropies.csv' % (mnase_seq_dir, strand_name)
     cc_summary = pd.read_csv(path)
     cc_summary = cc_summary.set_index(['cc_type', 'key', 'orf_name', 'time'])
 
@@ -65,9 +68,12 @@ def load_orf_entropies_by_cc_type(cc_type, strand_name):
     return data.copy()
 
 
-def load_orf_entropies(key, cc_type, strand):
+def load_orf_entropies(key, cc_type, strand, mnase_seq_dir=None):
 
-    orf_entropies = pd.read_csv('%s/orf_%s_entropies.csv' % (mnase_dir, strand))
+    if mnase_seq_dir is None:
+        mnase_seq_dir = mnase_dir # load from config
+
+    orf_entropies = pd.read_csv('%s/orf_%s_entropies.csv' % (mnase_seq_dir, strand))
     orf_entropies = orf_entropies.set_index(['key', 'cc_type', 'orf_name', 'time'])
     entropy_pivot = orf_entropies.loc[key].loc[cc_type]
     entropy_pivot = entropy_pivot.reset_index().pivot(index='orf_name', columns='time', values='entropy')
@@ -105,8 +111,8 @@ def calculate_cc_summary_measure(orfs, cross_correlation, strand, timer, measure
                 child_done(name, WATCH_TMP_DIR, child_name)
             else:
                 exports = ("SELECT_RANGE=%s,CC_TYPE=%s,ANTISENSE=%s,SLURM_WORKING_DIR=%s,CONDA_PATH=%s,CONDA_ENV=%s" % \
-                          (key, cc_type, str(strand == 'antisense',
-                           SLURM_WORKING_DIR, CONDA_PATH, CONDA_ENV)))
+                          (key, cc_type, str(strand == 'antisense'),
+                           SLURM_WORKING_DIR, CONDA_PATH, CONDA_ENV))
                 script = 'scripts/3_chrom_metrics/entropy.sh'
                 submit_sbatch(exports, script, WATCH_TMP_DIR)
 

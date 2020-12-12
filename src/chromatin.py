@@ -19,13 +19,53 @@ def filter_mnase_counts_wide(wide_counts_df, len_span, pos_span):
     queried_df = position_df.query(len_query)
     return queried_df
 
+# for caching calls to filter MNase seq data
+# TODO: fix cache
+cached_mnase_span = None
+cached_chrom = None
+cached_mnase = None
 
 def filter_mnase(mnase, start=None, end=None, chrom=None, 
-    time=None, length_select=(0, 250)):
+    sample=None, time=None, length_select=(0, 250), use_cache=False, 
+    flip=False, translate_origin=None, sample_key='time'):
     """
     Filter MNase-seq data given the argument parameters, do not filter if
     not specified
     """
+
+    global cached_mnase_span
+    global cached_chrom
+    global cached_mnase
+
+    if time is not None:
+        sample = time
+        sample_key = 'time'
+
+    if use_cache and end is not None and start is not None:
+
+        # for determining to reset cache and pad search window
+        cache_padding = 500
+
+        if (cached_mnase is None or end > cached_mnase_span[1]-cache_padding
+             or start < cached_mnase_span[0]+cache_padding or cached_chrom != chrom):
+
+            # set cache to 100000 window from start
+            # next genes should be nearest this window greater than this
+            # assumes start and end are less than nearest_win
+            nearest_win = 100000
+
+            if end - start > nearest_win: raise ValueError("Error setting cache")
+
+            start_cache = start - cache_padding
+            cached_mnase_span = start_cache, start_cache+nearest_win
+            cached_chrom = chrom
+
+            # set cache MNase
+            cached_mnase = filter_mnase(mnase, start=cached_mnase_span[0], 
+                chrom=cached_chrom, end=cached_mnase_span[1], use_cache=False)
+            mnase = cached_mnase
+        else:
+            mnase = cached_mnase
 
     select = ((mnase.length >= length_select[0]) &
               (mnase.length < length_select[1]))
@@ -37,10 +77,26 @@ def filter_mnase(mnase, start=None, end=None, chrom=None,
     if chrom is not None:
         select = (mnase.chr == chrom) & select
  
-    if time is not None:
-        select = select & (mnase.time == time)
+    if sample is not None:
+        select = select & (mnase[sample_key] == sample)
 
-    return mnase[select].copy()
+    ret_mnase = mnase[select].copy()
+
+    # translade mid positions to translated point
+    if translate_origin is not None:
+        ret_mnase.mid = ret_mnase.mid - translate_origin
+        ret_mnase.start = ret_mnase.start - translate_origin
+        ret_mnase.stop = ret_mnase.stop - translate_origin
+
+        # flip across origin if needed
+        if flip: 
+            ret_mnase.mid = -ret_mnase.mid
+            old_start = ret_mnase.start.values.copy()
+            ret_mnase.start = -ret_mnase.stop.copy()
+            ret_mnase.stop = -old_start
+
+    return ret_mnase
+
 
 def transform_mnase(mnase, center, strand):
     """

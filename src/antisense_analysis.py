@@ -253,7 +253,7 @@ def plot_antisense_dist(data):
         
     ax.legend(bbox_to_anchor=(1.25, 1.), frameon=False)
     ax.set_xlim(-9, 9)
-    ax.set_ylim(0, 0.75)
+    ax.set_ylim(0, 0.85)
     ax.axvline(0, color='gray', lw=2, alpha=0.5)
     ax.set_title("Antisense transcripts\ndistribution over time", fontsize=18)
     ax.set_xlabel('Log$_2$ fold-change antisense TPM')
@@ -275,7 +275,8 @@ def plot_antisense_lengths():
 
     ax.hist(antisense_lengths, 
              bins=25, linewidth=1, edgecolor='white')
-    ax.set_title("Antisense transcript lengths, N=%d" % len(antisense_lengths), fontsize=16)
+    ax.set_title("Antisense transcript lengths, N=%d" % len(antisense_lengths),
+                 fontsize=18)
     ax.set_xlabel("Length (bp)")
     ax.set_ylabel("# of genes")
 

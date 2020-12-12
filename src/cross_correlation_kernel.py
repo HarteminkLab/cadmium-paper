@@ -74,7 +74,7 @@ class MNaseSeqDensityKernel:
         ax.imshow(self.kernel_mat, extent=self.extent, 
                 origin='lower', cmap='RdYlBu_r', aspect=1.2)
 
-    def plot_kernel(self, kernel_type):
+    def plot_kernel(self, kernel_type, title=''):
 
         if kernel_type == 'nucleosome':
             fig, axs = plt.subplots(2, 2, figsize=(4, 5.35))

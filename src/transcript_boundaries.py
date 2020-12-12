@@ -10,7 +10,8 @@ from src.rna_seq_plotter import get_smoothing_kernel
 from src.transcription import filter_rna_seq_pileup
 from src.utils import flip_strand, print_fl
 from src.tasks import TaskDriver, child_done
-from config import WATCH_TMP_DIR, pileup_path, anti_chrom_dir, sense_chrom_dir, USE_SLURM
+from config import WATCH_TMP_DIR, pileup_path, anti_chrom_dir, sense_chrom_dir, USE_SLURM, SLURM_WORKING_DIR, CONDA_PATH, CONDA_ENV
+
 from src.timer import Timer
 from src.utils import run_cmd
 from src.datasets import read_orfs_data

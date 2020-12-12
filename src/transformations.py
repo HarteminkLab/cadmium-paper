@@ -52,12 +52,14 @@ def log2_fold_change(data, times=[0, 7.5, 15, 30, 60, 120],
     log2_data = log2(fc_data, times, fc_floor=fc_floor)
     return log2_data
 
-def difference(data, times=[0, 7.5, 15, 30, 60, 120]):
+def difference(data, times=[0, 7.5, 15, 30, 60, 120], time_zero=None):
     """
     Calculate difference to the first time point
     """
     data = data.copy()
-    time_zero = data[times[0]].copy()
+
+    if time_zero is None:
+        time_zero = data[times[0]].copy()
 
     # difference
     data.loc[:, times] = data[times].subtract(time_zero, axis=0)

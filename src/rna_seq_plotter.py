@@ -16,6 +16,7 @@ class RNASeqPlotter:
         self.span = None
         self.smooth_kernel = get_smoothing_kernel(100, 10)
         self.set_colors()
+        self.custom_times = None
 
     def set_span_chrom(self, span, chrom):
 
@@ -50,7 +51,11 @@ class RNASeqPlotter:
         selected_pileup = self.cur_pileup
 
         for i in range(len(times)):
+
             time = times[i]
+
+            if self.custom_times is not None:
+                if time not in self.custom_times: continue
 
             time_pileup = selected_pileup[selected_pileup.time == time]
             data = time_pileup[(time_pileup.strand == '+')]
