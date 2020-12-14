@@ -293,11 +293,11 @@ class GOChromatinAnalysis:
         return data
 
     def get_latex_table(self):
-        go_terms_disorg = self.get_go_terms_sorted()
+        terms = self.get_go_terms_sorted()
         ret_str = ''
-        columns = go_terms_disorg.columns
+        columns = terms.columns
 
-        for idx, row in go_terms_disorg.iterrows():
+        for idx, row in terms.iterrows():
 
             values = row[columns[1:]].values
             values = ['%.1f' % v for v in values]

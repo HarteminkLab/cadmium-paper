@@ -76,6 +76,7 @@ class TyphoonPlotter:
         self.titles = None
         self.titlesize = 48
         self.linkages = []
+        self.reverse_motif_zorder = False
         self.plot_tick_labels = True
         self.vmax = 0.00004
         self.highlight_regions = []
@@ -123,6 +124,7 @@ class TyphoonPlotter:
         titles = self.titles
         plot_tick_labels = self.plot_tick_labels
         vmax = self.vmax
+        reverse_motif_zorder = self.reverse_motif_zorder
 
         times = self.times
         n = len(times)
@@ -167,7 +169,8 @@ class TyphoonPlotter:
             if self.motifs != {}:
                 motifs = self.motifs
 
-                motif_scs, motif_names = plot_motifs(ax, motifs)
+                motif_scs, motif_names = plot_motifs(ax, motifs,
+                    reverse_motif_zorder=reverse_motif_zorder)
 
                 if i == 0:
                     legend_items = motif_scs
@@ -396,10 +399,12 @@ class TyphoonPlotter:
             custom_highlight_regions=None, dpi=100,
             tf_peaks=None, times=[0, 7.5, 15, 30, 60, 120],
             motif_keep=None,
-            should_plot_motifs=None, prefix=''):
+            should_plot_motifs=None, prefix='',
+            reverse_motif_zorder=False):
 
         self.dpi = dpi
         self.times = times
+        self.reverse_motif_zorder = reverse_motif_zorder
         orf_name = get_orf_name(gene_name)
 
         # plot motifs
@@ -504,6 +509,8 @@ class TyphoonPlotter:
             'MCD4': [141034, 140788]
         }
 
+        reverse_motif_zorder = ['SER33']
+
         for gene_name in genes:
 
             plot_tfs_list = plot_motifs_dic['all']
@@ -526,7 +533,9 @@ class TyphoonPlotter:
                            figwidth=figwidth, padding=padding, 
                            should_plot_motifs=plot_tfs_list, 
                            motif_keep=motif_keep,
-                           dpi=dpi, times=times)
+                           dpi=dpi, times=times,
+                           reverse_motif_zorder=
+                            (gene_name in reverse_motif_zorder))
 
             # save all TF motifs
             if save_all_motifs_dir is not None:
@@ -866,11 +875,12 @@ def motif_tf_priorities(motifs_tfs):
     return motifs_tfs
 
 
-def plot_motifs(ax, motifs):
+def plot_motifs(ax, motifs, reverse_motif_zorder=False):
     motif_names = list(sorted(motifs.keys()))
     motif_scs = []
     motif_names_disp = []
 
+    i = 0
     for motif_name in motif_names:
         motif = motifs[motif_name]
 
@@ -880,9 +890,17 @@ def plot_motifs(ax, motifs):
         motif_name = motif_name.title()
 
         for mid in motif['mid']:
+
+            if reverse_motif_zorder:
+                zorder = 1000-i
+            else:
+                zorder = 1000+i
+
             motif_sc = ax.scatter(mid, 20, marker=motif['marker'], 
                 facecolor=motif['color'], edgecolor='black',
-                linewidth=0.5, s=100, label=motif_name, zorder=102)
+                linewidth=0.5, s=100, label=motif_name,
+                zorder=zorder)
+            i += 1
 
         motif_scs.append(motif_sc)
         motif_names_disp.append(motif_name)

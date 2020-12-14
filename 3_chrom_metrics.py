@@ -248,5 +248,6 @@ def main():
     print_fl("\n--------- Generate data for supplemental ------------\n")
     create_suppl_data()
 
+
 if __name__ == '__main__':
     main()

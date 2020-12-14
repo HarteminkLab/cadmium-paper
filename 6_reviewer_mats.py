@@ -36,6 +36,7 @@ def main():
 
     print_preamble()
 
+
     mkdirs_safe([save_dir])
 
     plot_utils.apply_global_settings()
@@ -43,7 +44,7 @@ def main():
     # plots for shift edge analysis
     shift_edge_analysis.main()
 
-    # additional scatter plots
+    additional scatter plots
     scatters()
 
     xrate_vs_TPM()
@@ -105,14 +106,14 @@ def danpos():
     mnase = pd.read_hdf(mnase_seq_path, 'mnase_data')
     mnase = mnase[mnase.time == 0]
 
-    # save_file = 'mnase_0.bed'
-    # save_path = '%s/%s' % (danpos_output, save_file)
-    # create_bed_for_dpos(mnase, save_path)
-    # print_fl("Wrote %s" % save_path)
+    save_file = 'mnase_0.bed'
+    save_path = '%s/%s' % (danpos_output, save_file)
+    create_bed_for_dpos(mnase, save_path)
+    print_fl("Wrote %s" % save_path)
 
-    # bash_command = "scripts/6_reviewer_mats/run_danpos.sh %s %s %s" % \
-    #     (save_file, OUTPUT_DIR, danpos_path)
-    # output, error = run_cmd(bash_command, stdout_file=None)
+    bash_command = "scripts/6_reviewer_mats/run_danpos.sh %s %s %s" % \
+        (save_file, OUTPUT_DIR, danpos_path)
+    output, error = run_cmd(bash_command, stdout_file=None)
 
     danpos_calls_path = '%s/result/pooled/mnase_0.smooth.positions.xls' % \
         (danpos_output)
@@ -151,12 +152,6 @@ def xrate_vs_TPM():
         dpi=scatter_dpi)
     print_fl("Wrote %s" % save_path)
 
-    for half_lifes in [(0, 20), (20, 40), (40, 60), (60, 80), (80, 100)]:
-        save_path = '%s/xrate_vs_tpm_half_life_%d_%d.pdf' % (save_dir, 
-            half_lifes[0], half_lifes[1])
-        plot_xrate_vs_TPM(datastore, half_lifes)
-        plt.savefig(save_path, transparent=True, dpi=scatter_dpi)
-        print_fl("Wrote %s" % save_path)
 
 def scatters():
 
@@ -164,31 +159,23 @@ def scatters():
     from src.chromatin_metrics_data import ChromatinDataStore
 
     ind_names = [
-        "$\\Delta_{t=120}$ promoter nucleosome occupancy",
-        "$\\Delta_{t=120}$ small fragment occupancy",
-        "$\\Delta_{t=120}$ pene body disorganization",
-        "$\\Delta_{t=120}$ gene body nucleosome occupancy",
+        "Average $\\Delta$ promoter small fragment\noccupancy ",
+        "Average $\\Delta$ gene body disorganization\n",
+        "Average $\\Delta$ gene body nucleosome\noccupancy ",
 
-        "Average $\\Delta$ promoter nucleosome occupancy",
-        "Average $\\Delta$ small fragment occupancy",
-        "Average $\\Delta$ gene body disorganization",
-        "Average $\\Delta$ gene body nucleosome occupancy",
-
-        "Combined chromatin score",
+        "Combined chromatin score\n",
     ]
 
-    titles = [
+    save_names = [
+        'small_occ_vs_TPM_120',
+        'disorg_vs_TPM_120',
+        'nuc_occ_vs_TPM_120',
+
+        'combined_vs_TPM_120',
     ]
 
     xs = [
-        # measures @ 120
-        datastore.promoter_nuc_occ_delta[120],
-        datastore.promoter_sm_occupancy_delta[120],
-        datastore.gene_body_disorganization_delta[120],
-        datastore.gene_body_nuc_occ_delta[120],
-
         # mean measures
-        datastore.promoter_nuc_occ_delta.mean(axis=1),
         datastore.promoter_sm_occupancy_delta.mean(axis=1),
         datastore.gene_body_disorganization_delta.mean(axis=1),
         datastore.gene_body_nuc_occ_delta.mean(axis=1),
@@ -201,22 +188,22 @@ def scatters():
     for i in range(len(xs)):
         ind_name = ind_names[i]
         x = xs[i]
-        ind_title_name = ind_name.replace('$\\Delta_{t=120}$', '120')
-        save_title_name = ind_name.replace('$\\Delta_{t=120}$', '120')\
-            .replace('$\\Delta', '')
+        ind_title_name = ind_name
+        save_title_name = save_names[i]
+        xlabel_name = ind_name.replace('\n', ' ')
 
-        plot_distribution(x, y.loc[x.index], '%s' % ind_name, 
-                                  'True Log$_2$ transcript level, TPM', 
+        plot_distribution(x, y.loc[x.index], xlabel_name, 
+                                  'True log$_2$ transcript level, TPM', 
                                   highlight=selected_genes,
                                   xlim=(-3, 3),
                                   ylim=(0, 16),
-                                  title='%s\nvs transcript level @ 120 min' % ind_title_name,
+                                  title=('%svs transcript level @ 120 min' 
+                                         % ind_title_name),
                                   tight_layout=[0.1, 0.075, 0.9, 0.85],
                                   xticks=(-4, 4, 2),
                                   yticks=(0, 16, 5),
                                   plot_aux='cross')
-        save_path = '%s/%s_vs_tpm.pdf' % (save_dir, save_title_name\
-            .replace(' ', '_').lower())
+        save_path = '%s/%s.pdf' % (save_dir, save_title_name)
         plt.savefig(save_path, transparent=True, 
             dpi=scatter_dpi)
         print_fl("Wrote %s" % save_path)

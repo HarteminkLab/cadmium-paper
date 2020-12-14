@@ -19,30 +19,35 @@ def plot_disorg_vs_xrate(datastore, selected_genes):
     x = datastore.gene_body_disorganization_delta.mean(axis=1)
     y = datastore.transcript_rate_logfold.mean(axis=1).loc[x.index]
 
-    model = plot_distribution(x, y, '$\\Delta$ Nucleosome disorganization', 
-                              'Log$_2$ fold-change transcription rate', 
+    model = plot_distribution(x, y, 'Avg $\\Delta$ nucleosome disorganization', 
+                              'Avg log$_2$ fold-change transcription rate', 
                               highlight=selected_genes,
-                             title='Nucleosome disorganization vs transcription')
+                              tight_layout=[0.15, 0.15, 0.88, 0.88],
+                             title='Avg $\\Delta$ nucleosome disorganization\n'
+                                   'vs Avg change in transcription')
 
 def plot_occ_vs_xrate(datastore, selected_genes):
     x = datastore.promoter_sm_occupancy_delta.mean(axis=1)
     y = datastore.transcript_rate_logfold.mean(axis=1).loc[x.index]
 
-    model = plot_distribution(x, y, '$\\Delta$ Small fragment occupancy', 
-                              'Log$_2$ fold-change transcription rate', 
+    model = plot_distribution(x, y, 'Avg $\\Delta$ small fragment occupancy', 
+                                    'Avg log$_2$ fold-change transcription rate', 
                               highlight=selected_genes,
+                              tight_layout=[0.15, 0.15, 0.88, 0.88],
                               xlim=(-2, 2),
-                             title='Small fragment occupancy vs transcription')
+                             title='Avg $\\Delta$ small fragment occupancy\n'
+                                   'vs Avg change in transcription')
 
 def plot_diosorg_vs_occ(datastore, selected_genes):
     x = datastore.promoter_sm_occupancy_delta.mean(axis=1)
     y = datastore.gene_body_disorganization_delta.mean(axis=1).loc[x.index]
 
-    model = plot_distribution(x, y, '$\\Delta$ Small fragment occupancy', 
-                              '$\\Delta$ Nucleosome disorganization', 
+    model = plot_distribution(x, y, 'Avg $\\Delta$ small fragment occupancy', 
+                              'Avg $\\Delta$ nucleosome disorganization', 
                               highlight=selected_genes,
-                              title='Small fragment occupancy vs\nnucleosome disorganization',
-                              tight_layout=[0.15, 0.15, 0.88, 0.88],
+                              title='Avg $\\Delta$ small fragment occupancy vs\n'
+                                    'Avg $\\Delta$ nucleosome disorganization',
+                                    tight_layout=[0.15, 0.15, 0.88, 0.88],
                               xlim=(-2.5, 2.5), ylim=(-2.5, 2.5))
 
 def plot_combined_vs_xrate(datastore, selected_genes):
@@ -50,10 +55,11 @@ def plot_combined_vs_xrate(datastore, selected_genes):
     x = datastore.combined_chromatin_score
     y = datastore.transcript_rate_logfold.loc[x.index].mean(axis=1).loc[x.index]
 
-    model = plot_distribution(x, y, '$\\Delta$ Combined chromatin dynamics score', 
-                              'Log$_2$ fold-change transcription rate', 
+    model = plot_distribution(x, y, 'Combined chromatin', 
+                              'Avg log$_2$ fold-change transcription rate', 
                               highlight=selected_genes,
-                             title='Combined chromatin\nvs transcription', 
+                             title='Combined chromatin vs\n'
+                                   'Avg change in transcription',
                              tight_layout=[0.15, 0.15, 0.88, 0.88])
 
 def plot_sul_prom_disorg(datastore):
@@ -61,8 +67,8 @@ def plot_sul_prom_disorg(datastore):
     x = datastore.promoter_sm_occupancy_delta.mean(axis=1)
     y = datastore.gene_body_disorganization_delta.mean(axis=1).loc[x.index]
 
-    model = plot_distribution(x, y, '$\\Delta$ Small fragment occupancy', 
-                              '$\\Delta$ Nucleosome disorganization', 
+    model = plot_distribution(x, y, 'Avg $\\Delta$ small fragment occupancy', 
+                              'Avg $\\Delta$ nucleosome disorganization', 
                               highlight=['PDC1', 'PDC6', 'MET32', 'MET30'],
                               highlight_format={
                                 'PDC1':{
@@ -104,13 +110,13 @@ def plot_combined_vs_TPM(datastore, selected_genes):
     x = datastore.combined_chromatin_score
     y = datastore.sense_TPM_logfold.mean(axis=1).loc[x.index]
 
-    ax = plot_distribution(x, y, '$\\Delta$ Combined chromatin dynamics score', 
-                          'Log$_2$ fold-change transcript level, TPM', 
+    ax = plot_distribution(x, y, 'Combined chromatin', 
+                          'Avg log$_2$ fold-change transcript level, TPM', 
                           highlight=selected_genes,
                           xlim=(-3, 3),
                           ylim=(-5, 7),
-                          title=('Combined chromatin vs\ntranscript '
-                                 'level'),
+                          title=('Combined chromatin vs\n'
+                                 'avg change in transcript level'),
                           tight_layout=[0.1, 0.075, 0.9, 0.85],
                           dpi=100, plot_lr=False)
 
@@ -120,13 +126,13 @@ def plot_disorg_vs_TPM(datastore, selected_genes):
     x = datastore.gene_body_disorganization_delta.mean(axis=1)
     y = datastore.sense_TPM_logfold.mean(axis=1).loc[x.index]
 
-    ax = plot_distribution(x, y, '$\\Delta$ Nucleosome disorganization', 
-                              'Log$_2$ fold-change transcript level, TPM', 
+    ax = plot_distribution(x, y, 'Avg $\\Delta$ nucleosome disorganization', 
+                              'Avg log$_2$ fold-change transcript level, TPM', 
                               highlight=selected_genes,
                               xlim=(-3, 3),
                               ylim=(-5, 7),
-                              title=('Nucleosome disorganization '
-                                     'vs\ntranscript level'),
+                              title=('Avg $\\Delta$ nucleosome disorganization '
+                                     'vs\navg change in transcript level'),
                               tight_layout=[0.1, 0.075, 0.9, 0.85],
                               dpi=100, plot_lr=False)
 
@@ -135,12 +141,13 @@ def plot_occ_vs_TPM(datastore, selected_genes):
     x = datastore.promoter_sm_occupancy_delta.mean(axis=1)
     y = datastore.sense_TPM_logfold.mean(axis=1).loc[x.index]
 
-    ax = plot_distribution(x, y, '$\\Delta$ Small fragment occupancy', 
-                              'Log$_2$ fold-change transcript level, TPM',
+    ax = plot_distribution(x, y, 'Avg $\\Delta$ small fragment occupancy', 
+                              'Avg log$_2$ fold-change transcript level, TPM',
                               highlight=selected_genes,
                               xlim=(-3, 3),
                               ylim=(-5, 7),
-                              title='Small fragment occupancy vs\ntranscript level',
+                              title='Avg $\\Delta$ small fragment occupancy vs'
+                                    '\navg change in transcript level',
                               tight_layout=[0.1, 0.075, 0.9, 0.85],
                               dpi=100, plot_lr=False)
 
@@ -360,8 +367,8 @@ def plot_distribution(x_data, y_data, xlabel, ylabel, highlight=[],
     return ax
 
 
-def plot_frag_len_dist(mnase_data, title="Fragment lengths", 
-  normalize=True):
+def plot_frag_len_dist(mnase_data, title="Subsampled, merged fragment lengths", 
+  normalize=True, plt_legend=False):
 
     from config import times
     from src.plot_utils import plot_density, apply_global_settings
@@ -397,11 +404,13 @@ def plot_frag_len_dist(mnase_data, title="Fragment lengths",
         i += 1
         
     ax.set_title(title, fontsize=20)
-    ax.set_xlabel('Length, bp')
+    ax.set_xlabel('Fragment length (bp)')
     ax.set_ylabel('Density')
     ax.set_ylim(0, 0.02)
     ax.set_xlim(0, 250)
-    ax.legend(bbox_to_anchor=(1.35, 1.), frameon=False)
+
+    if plt_legend:
+        ax.legend(bbox_to_anchor=(1.35, 1.), frameon=False)
 
 
 def plot_xrate_vs_TPM(datastore, half_lifes=None):
@@ -425,19 +434,19 @@ def plot_xrate_vs_TPM(datastore, half_lifes=None):
     cor, pval = pearsonr(plot_data[120.0], plot_data.TPM)
     pval = convert_to_latex_sci_not(pval)
 
-    title = 'Transcription rate vs transcript level, 0-120\''
+    title = 'Change in transcription rate vs\nchange in transcript level, 0-120\''
     title = ("%s\nPearson's r=%.2f, p=%s" % 
             (title, cor, pval))
 
-    fig, ax = plt.subplots(1, 1, figsize=(6.75, 6))
-    fig.tight_layout(rect=[0.1, 0.1, 0.8, 0.8])
+    fig, ax = plt.subplots(1, 1, figsize=(7, 6))
+    fig.tight_layout(rect=[0.1, 0.1, 0.9, 0.85])
 
     ax.scatter(plot_data[120.0], plot_data.TPM, c='', edgecolor='#c0c0c0', s=5, rasterized=True)
     scatter = ax.scatter(plot_data[120.0], plot_data.TPM, c=plot_data['half_life'], s=3, cmap='magma_r', 
                 vmin=0, vmax=100, rasterized=True)
     ax.set_xlabel('Log$_2$ fold-change transcription rate')
     ax.set_ylabel('Log$_2$ fold-change transcript level, TPM')
-    ax.set_title(title)
+    plt.suptitle(title, fontsize=16)
     cbar = plt.colorbar(scatter)
     cbar.ax.set_title("Half life, min")
 

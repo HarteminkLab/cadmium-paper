@@ -35,16 +35,25 @@ def download_bam():
     ]
 
     rna_rep1_files = [
-        ("SRR12124878", "DM538_RNA_0_min"),
-        ("SRR12124879", "DM539_RNA_7.5_min"),
-        ("SRR12124880", "DM540_RNA_15_min"),
-        ("SRR12124881", "DM541_RNA_30_min"),        
-        ("SRR12124882", "DM542_RNA_60_min"),
-        ("SRR12124883", "DM543_RNA_120_min"),
+        ("SRR12124878", "RNA_rep1_0_min"),
+        ("SRR12124879", "RNA_rep1_7.5_min"),
+        ("SRR12124880", "RNA_rep1_15_min"),
+        ("SRR12124881", "RNA_rep1_30_min"),
+        ("SRR12124882", "RNA_rep1_60_min"),
+        ("SRR12124883", "RNA_rep1_120_min")
     ]
 
+    # TODO: 
+    # SRA IDs will be available on 12/15/2020
+    # at https://www.ncbi.nlm.nih.gov/Traces/study/?acc=SRP269500&o=acc_s%3Aa
     rna_rep2_files = [
-        # TODO: Awaiting approval of added samples on GSE
+        
+        (None, "RNA_rep2_0_min"),
+        (None, "RNA_rep2_7.5_min"),
+        (None, "RNA_rep2_15_min"),
+        (None, "RNA_rep2_30_min"),
+        (None, "RNA_rep2_60_min"),
+        (None, "RNA_rep2_120_min"),
     ]
 
     sra_id = mnase_rep1_files[0][0]

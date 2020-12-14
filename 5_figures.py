@@ -284,8 +284,8 @@ def misc_plots():
     plot_frag_len_dist(plotter.all_mnase_data)
     plt.savefig("%s/frag_length_distribution.pdf" % misc_figures_dir, transparent=True)
 
-    print_fl("Load allMNase-seq data for fragment length distributions")
-    all_mnase_data = pd.read_hdf('%/mnase_seq_merged_all.h5.z' % mnase_dir, 
+    print_fl("Load all MNase-seq data for fragment length distributions")
+    all_mnase_data = pd.read_hdf('%s/mnase_seq_merged_all.h5.z' % mnase_dir, 
                              'mnase_data')
     repl1_mnase = all_mnase_data[all_mnase_data['source'] == 'dm498_503']
     repl2_mnase = all_mnase_data[all_mnase_data['source'] == 'dm504_509']
