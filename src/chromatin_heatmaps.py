@@ -117,12 +117,13 @@ class ChromatinHeatmaps:
                     tick_labels = []
                     tick_positions = []
 
+                # plot gene names using txt
                 for i in range(len(tick_labels)):
                     ax.text((num_times*num_columns + 
                             (num_columns-1)*col_spacing+0.5),
                             tick_positions[i], tick_labels[i],
                             ha='left', va='center', fontsize=14,
-                            fontdict={'fontname': 'Open Sans'})
+                            fontdict={'fontname': 'Open Sans', 'style': 'italic'})
 
                 # group names
                 ax.text(-1,
@@ -158,8 +159,11 @@ class ChromatinHeatmaps:
         if y_padding is None:
             y_padding = len(plot_data)*1e-2
 
+        # Italicize gene names
+        fontdict = {'fontname': 'Open Sans', 'fontweight': 'regular',
+                   'style': 'italic', 'fontsize': 26}
         ax.set_yticks(np.array(tick_positions)+0.5)
-        ax.set_yticklabels(tick_labels, fontsize=26)
+        ax.set_yticklabels(tick_labels, fontdict)
 
         if group_names is not None:
 

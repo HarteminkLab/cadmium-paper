@@ -20,6 +20,17 @@ SLURM_WORKING_DIR = "/path/to/working/dir"
 CONDA_PATH = "/path/to/conda.sh"
 CONDA_ENV = "conda_env_name"
 
+# FIMO config
+FIMO_PATH = '/path/to/fimo'
+FIMO_GENOME_FSA = "path/to/sacCer3/genome.fsa"
+MACISAAC_MEME_PATH = 'path/to/macisacc_yeastdata/fimo/macisaac_yeast.v1.meme'
+
+# SacCer3 reference genome files
+SACCER3_REFERENCE = 'path/to/sacCer3/reference/genome/files'
+
+# subset GPR genes to most well-positioned +1 genes
+SUBSET_GPR_GENES = False
+
 # Directory to watch for slurm child jobs to complete
 WATCH_TMP_DIR = '%s/watch_tmp' % OUTPUT_DIR
 

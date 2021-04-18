@@ -24,7 +24,7 @@ all_orfs = all_orfs_TSS_PAS()
 timer = Timer()
 datastore = ChromatinDataStore()
 
-genes = get_gene_list() + met4.all_genes()
+genes = get_paper_list()
 plotter = None
 selected_genes = ['HSP26', 'RPS7A', 'CKB1']
 
@@ -119,9 +119,13 @@ def typhoon_plots():
     print_fl("Plotting examples...", end='')
     draw_example_mnase_seq(plotter, misc_figures_dir)
     draw_example_rna_seq(plotter, misc_figures_dir)
-    plot_example_cross(plotter, misc_figures_dir)
+    # plot_example_cross(plotter, misc_figures_dir)
     print_fl("Done.")
     timer.print_time()
+
+    # Hsp26 plot for figure 1
+    plotter.plot_genes(['HSP26'], save_dir, None,
+        times=[0.0, 30.0, 60.0, 120.0], prefix='fig_')
 
 
 def summary_plots():
@@ -422,7 +426,7 @@ def plot_heatmaps():
                           group_names=met4.groups(), 
                           group_colors=met4.group_colors(),
                           write_path=("%s/sulfur.pdf" % write_dir),
-                          fig_height=10,
+                          fig_height=11,
                           aspect_scale=5000.,
                           highlight_max=[],
                           y_padding=1)
@@ -451,7 +455,9 @@ def shift_plots():
     save_dir = '%s/shift' % OUTPUT_DIR
     mkdirs_safe([save_dir])
 
-    for gene_name in genes:
+    shift_genes = ['RPS7A']
+
+    for gene_name in shift_genes:
         fig = plot_p123(gene_name, orf_cc, plotter, sum_plotter, save_dir)
 
     p1 = datastore.p1_shift[[120.0]]

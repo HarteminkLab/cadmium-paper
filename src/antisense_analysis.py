@@ -90,9 +90,10 @@ def plot_antisense_vs_sense(antisense_logfold_TPM, sense_logfold_rate, time, hig
         "log$_2$ fold-change Sense transcription rate", 
         "log$_2$ fold-change Antisense transcripts", 
         highlight=highlight,
-        xlim=(-9, 9), xstep=2,
-        ylim=(-9, 9), ystep=2,
+        xlim=(-8, 8), xstep=2,
+        ylim=(-8, 8), ystep=2,
         pearson=False, aux_lw=1.5,
+        plot_minor=False,
         title="Sense vs antisense\ntranscription, 0-%.0f min" % time)
 
     for x in [-2, 2]:

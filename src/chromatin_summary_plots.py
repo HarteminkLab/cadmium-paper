@@ -22,9 +22,12 @@ def plot_disorg_vs_xrate(datastore, selected_genes):
     model = plot_distribution(x, y, 'Avg $\\Delta$ nucleosome disorganization', 
                               'Avg log$_2$ fold-change transcription rate', 
                               highlight=selected_genes,
-                              tight_layout=[0.15, 0.15, 0.88, 0.88],
+                              tight_layout=[0.15, 0.15, 0.85, 0.85],
+                              xticks=(-2, 3, 1), 
+                              yticks=(-12, 12, 2),
+                              plot_minor=False,
                              title='Avg $\\Delta$ nucleosome disorganization\n'
-                                   'vs Avg change in transcription')
+                                   'vs avg log$_2$ fold-change in transcription')
 
 def plot_occ_vs_xrate(datastore, selected_genes):
     x = datastore.promoter_sm_occupancy_delta.mean(axis=1)
@@ -33,10 +36,13 @@ def plot_occ_vs_xrate(datastore, selected_genes):
     model = plot_distribution(x, y, 'Avg $\\Delta$ small fragment occupancy', 
                                     'Avg log$_2$ fold-change transcription rate', 
                               highlight=selected_genes,
-                              tight_layout=[0.15, 0.15, 0.88, 0.88],
+                              tight_layout=[0.15, 0.15, 0.85, 0.85],
                               xlim=(-2, 2),
+                              xticks=(-2, 3, 1), 
+                              yticks=(-12, 12, 2),
+                              plot_minor=False,
                              title='Avg $\\Delta$ small fragment occupancy\n'
-                                   'vs Avg change in transcription')
+                                   'vs avg log$_2$ fold-change in transcription')
 
 def plot_diosorg_vs_occ(datastore, selected_genes):
     x = datastore.promoter_sm_occupancy_delta.mean(axis=1)
@@ -46,21 +52,33 @@ def plot_diosorg_vs_occ(datastore, selected_genes):
                               'Avg $\\Delta$ nucleosome disorganization', 
                               highlight=selected_genes,
                               title='Avg $\\Delta$ small fragment occupancy vs\n'
-                                    'Avg $\\Delta$ nucleosome disorganization',
-                                    tight_layout=[0.15, 0.15, 0.88, 0.88],
-                              xlim=(-2.5, 2.5), ylim=(-2.5, 2.5))
+                                    'avg $\\Delta$ nucleosome disorganization',
+                                    tight_layout=[0.15, 0.15, 0.85, 0.85],
+                              xlim=(-2.5, 2.5), ylim=(-2.5, 2.5),
+                              xticks=(-2, 3, 1), 
+                              plot_minor=False,
+                              yticks=(-2, 3, 1))
 
 def plot_combined_vs_xrate(datastore, selected_genes):
 
     x = datastore.combined_chromatin_score
     y = datastore.transcript_rate_logfold.loc[x.index].mean(axis=1).loc[x.index]
 
+    custom_formatting = {
+        'HSP26': {'ha': 'right', 'va': 'top'}
+    }
+
     model = plot_distribution(x, y, 'Combined chromatin', 
                               'Avg log$_2$ fold-change transcription rate', 
                               highlight=selected_genes,
-                             title='Combined chromatin vs\n'
-                                   'Avg change in transcription',
-                             tight_layout=[0.15, 0.15, 0.88, 0.88])
+                              ylim=(-6, 8),
+                             title='Combined chromatin vs '
+                                   'avg\nlog$_2$ fold-change in transcription',
+                             tight_layout=[0.15, 0.15, 0.85, 0.85],
+                              xticks=(-2, 3, 1), 
+                              yticks=(-10, 10, 2),
+                              plot_minor=False,
+                              highlight_format=custom_formatting)
 
 def plot_sul_prom_disorg(datastore):
 
@@ -102,7 +120,9 @@ def plot_sul_prom_disorg(datastore):
                               markersize=60,
                              title='Sulfur pathway genes',
                              xstep=1, ystep=1,
-                             xlim=(-1.5, 2.5), ylim=(-1.5, 2.5), ha='right', pearson=False)
+                             xlim=(-1.5, 2.5), ylim=(-1.5, 2.5), ha='right', pearson=False,
+                              xticks=(-2, 3, 1), 
+                              yticks=(-2, 3, 1))
 
 
 def plot_combined_vs_TPM(datastore, selected_genes):
@@ -115,10 +135,12 @@ def plot_combined_vs_TPM(datastore, selected_genes):
                           highlight=selected_genes,
                           xlim=(-3, 3),
                           ylim=(-5, 7),
-                          title=('Combined chromatin vs\n'
-                                 'avg change in transcript level'),
+                          title=('Combined chromatin vs '
+                                 'avg\nlog$_2$ fold-change in transcript level'),
                           tight_layout=[0.1, 0.075, 0.9, 0.85],
-                          dpi=100, plot_lr=False)
+                          dpi=100, plot_lr=False,
+                            xticks=(-4, 6, 2), 
+                            yticks=(-6, 8, 2))
 
 
 def plot_disorg_vs_TPM(datastore, selected_genes):
@@ -132,9 +154,11 @@ def plot_disorg_vs_TPM(datastore, selected_genes):
                               xlim=(-3, 3),
                               ylim=(-5, 7),
                               title=('Avg $\\Delta$ nucleosome disorganization '
-                                     'vs\navg change in transcript level'),
+                                     'vs\navg log$_2$ fold-change in transcript level'),
                               tight_layout=[0.1, 0.075, 0.9, 0.85],
-                              dpi=100, plot_lr=False)
+                              dpi=100, plot_lr=False,
+                            xticks=(-4, 6, 2), 
+                            yticks=(-6, 8, 2))
 
 
 def plot_occ_vs_TPM(datastore, selected_genes):
@@ -147,16 +171,20 @@ def plot_occ_vs_TPM(datastore, selected_genes):
                               xlim=(-3, 3),
                               ylim=(-5, 7),
                               title='Avg $\\Delta$ small fragment occupancy vs'
-                                    '\navg change in transcript level',
+                                    '\navg log$_2$ fold-change in transcript level',
                               tight_layout=[0.1, 0.075, 0.9, 0.85],
-                              dpi=100, plot_lr=False)
+                              dpi=100, plot_lr=False,
+                            xticks=(-4, 6, 2), 
+                            yticks=(-6, 8, 2))
 
 
 def plot_distribution(x_data, y_data, xlabel, ylabel, highlight=[], 
-    title=None, xlim=(-2.5, 2.5), ylim=(-6, 10), xstep=2, ystep=2, pearson=True,
+    title=None, xlim=(-2.5, 2.5), ylim=(-6, 10),
+    xstep=2, ystep=2, pearson=True,
     ha='right', va='bottom', plot_aux='cross', groups={}, highlight_format={},
     aux_lw=1.5, s=5, markersize=53, ax=None, text_offset=None, tight_layout=None, 
-    dpi=300, bw=None, plot_lr=False, titlesize=18, xticks=None, yticks=None):
+    dpi=300, bw=None, plot_lr=False, titlesize=18, xticks=None, yticks=None,
+    plot_minor=True):
     
     apply_global_settings(10, dpi=dpi)
 
@@ -256,7 +284,7 @@ def plot_distribution(x_data, y_data, xlabel, ylabel, highlight=[],
         ax.scatter(selected_x, 
                    selected_y,
                    s=markersize, facecolor=facecolor, color=color,
-                   zorder=100, marker=marker, linewidth=1.5)
+                   zorder=98, marker=marker, linewidth=1.5)
 
         if text_offset is None:
             text_offset = (xlim[1]-xlim[0]) * 5e-3
@@ -288,7 +316,7 @@ def plot_distribution(x_data, y_data, xlabel, ylabel, highlight=[],
                 gene_name,
 
             fontdict={'fontname': 'Open Sans', 
-            'fontweight': 'regular'},
+            'fontweight': 'regular', 'style': 'italic'},
             fontsize=12,
             ha=cur_ha,
             va=cur_va,
@@ -299,20 +327,20 @@ def plot_distribution(x_data, y_data, xlabel, ylabel, highlight=[],
                            path_effects.Normal()])
 
     if xticks is None:
-        ax.set_xticks(np.arange(xlim[0], xlim[1]+xstep, xstep))
-    else:
-        ax.set_xticks(np.arange(*xticks))
+        xticks = xlim[0], xlim[1]+xstep, xstep
+  
+    ax.set_xticks(np.arange(*xticks))
 
     if yticks is None:
-        ax.set_yticks(np.arange(ylim[0], ylim[1]+ystep, ystep))
-    else:
-        ax.set_yticks(np.arange(*yticks))
+        yticks = ylim[0], ylim[1]+ystep, ystep
 
-    if xstep < 5:
-        ax.set_xticks(np.arange(xlim[0], xlim[1], 1), minor=True)
+    ax.set_yticks(np.arange(*yticks))
 
-    if ystep < 5:
-        ax.set_yticks(np.arange(ylim[0], ylim[1], 1), minor=True)
+    if xstep < 5 and plot_minor:
+        ax.set_xticks(np.arange(xticks[0], xticks[1], 1), minor=True)
+
+    if ystep < 5 and plot_minor:
+        ax.set_yticks(np.arange(yticks[0], yticks[1], 1), minor=True)
 
     ax.tick_params(axis='x', pad=5, labelsize=15)
     ax.tick_params(axis='y', pad=5, labelsize=15)
@@ -327,13 +355,13 @@ def plot_distribution(x_data, y_data, xlabel, ylabel, highlight=[],
             fontsize=14)
 
     if plot_aux == 'cross' or plot_aux == 'both':
-        ax.axvline(0, linestyle='solid', color='#505050', linewidth=aux_lw, zorder=98)
-        ax.axhline(0, linestyle='solid', color='#505050', linewidth=aux_lw, zorder=98)
+        ax.axvline(0, linestyle='solid', color='#505050', linewidth=aux_lw, zorder=97)
+        ax.axhline(0, linestyle='solid', color='#505050', linewidth=aux_lw, zorder=97)
 
     if plot_aux == 'diag' or plot_aux == 'both':
         ax.plot([xlim[0]*2, xlim[1]*2], 
             [xlim[0]*2, xlim[1]*2],
-            linestyle='solid', color='#505050', linewidth=aux_lw, zorder=98)
+            linestyle='solid', color='#505050', linewidth=aux_lw, zorder=97)
 
     if pearson:
         from src.math_utils import convert_to_latex_sci_not
@@ -434,7 +462,8 @@ def plot_xrate_vs_TPM(datastore, half_lifes=None):
     cor, pval = pearsonr(plot_data[120.0], plot_data.TPM)
     pval = convert_to_latex_sci_not(pval)
 
-    title = 'Change in transcription rate vs\nchange in transcript level, 0-120\''
+    title = 'Log$_2$ fold-change in transcription rate vs\n' \
+            'log$_2$ fold-change in transcript level, 0-120\''
     title = ("%s\nPearson's r=%.2f, p=%s" % 
             (title, cor, pval))
 

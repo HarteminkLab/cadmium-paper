@@ -15,6 +15,8 @@ mnase_bam_rep2_dir = '%s/mnase_seq/rep2' % BAM_DIR
 def download_bam():
     
     from src.read_bam import sra_download_convert_bam
+    # SRA IDs available at
+    # https://www.ncbi.nlm.nih.gov/Traces/study/?acc=SRP269500&o=acc_s%3Aa
 
     mnase_rep1_files = [
         ("SRR12124866", "DM498_MNase_rep1_0_min"),
@@ -43,17 +45,14 @@ def download_bam():
         ("SRR12124883", "RNA_rep1_120_min")
     ]
 
-    # TODO: 
-    # SRA IDs will be available on 12/15/2020
-    # at https://www.ncbi.nlm.nih.gov/Traces/study/?acc=SRP269500&o=acc_s%3Aa
     rna_rep2_files = [
         
-        (None, "RNA_rep2_0_min"),
-        (None, "RNA_rep2_7.5_min"),
-        (None, "RNA_rep2_15_min"),
-        (None, "RNA_rep2_30_min"),
-        (None, "RNA_rep2_60_min"),
-        (None, "RNA_rep2_120_min"),
+        ('SRR13253046', "RNA_rep2_0_min"),
+        ('SRR13253047', "RNA_rep2_7.5_min"),
+        ('SRR13253048', "RNA_rep2_15_min"),
+        ('SRR13253049', "RNA_rep2_30_min"),
+        ('SRR13253050', "RNA_rep2_60_min"),
+        ('SRR13253051', "RNA_rep2_120_min"),
     ]
 
     sra_id = mnase_rep1_files[0][0]

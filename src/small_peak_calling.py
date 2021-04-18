@@ -478,7 +478,7 @@ def plot_tf_scatter(small_peaks, tf_name=None, tf_names=None, t0=0.0, t1=120.0,
 
         for idx, p in labeled_peaks.iterrows():
             ax.text(p.loc[t0], p.loc[t1]+0.005, p['name'],
-                    ha='center', va='center', fontsize=13)
+                    ha='center', va='center', fontsize=13, fontdict={'style':'italic'})
 
     ax.set_xlim(0., 0.12)
     ax.set_ylim(0., 0.12)

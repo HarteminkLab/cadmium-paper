@@ -148,7 +148,7 @@ def plot_p123(gene_name, orf_cc, plotter, sum_plotter, save_dir):
     sum_plotter.set_gene(gene_name)
     write_path = "%s/cc_%s.pdf" % (save_dir, gene_name)
     fig = sum_plotter.plot_cross_correlation_heatmap(show_colorbar=True,
-                    title='%s cross correlation' % gene_name, nucs=time_mids)
+                    title='$\it{'+gene_name+'}$ cross correlation', nucs=time_mids)
     plt.savefig(write_path, transparent=False)
     plt.close(fig)
 

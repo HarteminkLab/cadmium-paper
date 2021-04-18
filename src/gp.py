@@ -476,7 +476,7 @@ def plot_res_distribution_time(model, time, predict_abs_TPM=True,
 
     if predict_abs_TPM:
         label = "log$_2$ transcript level, TPM"
-        lims = (0, 17)
+        lims = (0, 15)
     else:
         label = "log$_2$ fold-change\ntranscription rate, TPM/min"
         lims = (-15, 15)
@@ -503,8 +503,14 @@ def plot_res_distribution_time(model, time, predict_abs_TPM=True,
 
     if time == 30:
         custom_formatting = {
-            'HSP26': {'ha': 'left', 'va': 'top'},
-            'RPS7A': {'ha': 'left', 'va': 'bottom'}
+            'HSP26': {'ha': 'right', 'va': 'bottom'},
+            'RPS7A': {'ha': 'left', 'va': 'bottom'},
+            'CKB1': {'ha': 'right', 'va': 'top'}
+        }
+
+    elif time == 120:
+        custom_formatting = {
+            'HSP26': {'ha': 'right', 'va': 'top'}
         }
 
     model = plot_distribution(x, y, 
@@ -514,9 +520,10 @@ def plot_res_distribution_time(model, time, predict_abs_TPM=True,
                               title=title,
                               xlim=lims,
                               ylim=lims, 
-                              xstep=5,
-                              ystep=5,
+                              xstep=2,
+                              ystep=2,
                               pearson=False, 
+                              plot_minor=False,
                               highlight_format=custom_formatting,
                               tight_layout=tight_layout,
                               ha='right', plot_aux=plot_aux, ax=ax)

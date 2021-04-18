@@ -51,12 +51,9 @@ def plot_timecourse(data_store):
 
     x = np.arange(6)
 
-    ax.plot(x, disorg.loc[met30_orf], color='#7A7A7A', mec='#7A7A7A', mfc='white',
-            marker='o', fillstyle='full', markersize=7,
-          label='MET30')
     ax.plot(x, disorg.loc[met32_orf], mec='#4F8DC6', mfc='white',
             color='#4F8DC6', marker='v', fillstyle='full', markersize=9,
-          label='MET32')
+          label='$\it{MET32}$')
 
     # for orf in sulf_assim:
     sa_disorg = disorg.loc[sulf_assim].mean()
@@ -67,7 +64,11 @@ def plot_timecourse(data_store):
             label='Sulfur assimilation')
     ax.fill_between(x, sa_disorg_lower, sa_disorg_upper, color='#FAF1EC', zorder=1, alpha=1.)
 
-    dis_ticks = np.arange(-8, 9, 2)
+    ax.plot(x, disorg.loc[met30_orf], color='#7A7A7A', mec='#7A7A7A', mfc='white',
+            marker='o', fillstyle='full', markersize=7,
+          label='$\it{MET30}$')
+
+    dis_ticks = np.arange(-8, 9, 1)
     ax.set_yticks(dis_ticks)
     labels = ['%d' % s for s in dis_ticks]
     labels[4] = 0
@@ -79,10 +80,10 @@ def plot_timecourse(data_store):
     ax.set_xticklabels(['%s\'' % str(t) for t in times])
 
     ax.set_xlim(-0.2, 5.2)
-    ax.set_ylim(-0.5, 5)
+    ax.set_ylim(-0.2, 3.2)
 
-    ax.set_title('Sulfur pathway\ntime course', 
-        fontdict={'family':'Open Sans'}, fontsize=20)
-    ax.legend(bbox_to_anchor=(0.45, -0.15),
-              frameon=False, fontsize=12)
+    #ax.set_title()
+    ax.legend(bbox_to_anchor=(-0.1, -0.15),
+              frameon=False, fontsize=12, loc='upper left', ncol=3,
+              columnspacing=1.5)
 

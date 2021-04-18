@@ -20,6 +20,7 @@ from src.chromatin import filter_mnase
 from src.rna_seq_plotter import RNASeqPlotter
 from src.plot_orf_annotations import ORFAnnotationPlotter
 from src import plot_utils
+from src.plot_utils import apply_global_settings
 from src.utils import get_orf_name, print_fl
 from src.math_utils import nearest_span
 from src.reference_data import read_sgd_orf_introns
@@ -202,8 +203,11 @@ class TyphoonPlotter:
 
             plot_utils.format_ticks_font(ax, fontsize=20)
 
+        bbox = (-0.2, -0.45)
+        # bbox = (0.0, -0.25)
+            
         time_axes[-1].legend(legend_items, legend_labels, loc='upper left',
-            bbox_to_anchor=(-0.2, -0.5), columnspacing=1,
+            bbox_to_anchor=bbox, columnspacing=1,
             frameon=False, fontsize=24, ncol=3)
 
         if output is not None:
@@ -225,9 +229,10 @@ class TyphoonPlotter:
         n = len(times)
 
         titlepad = 10
+        self.linewidth = 2
 
         plot_utils.apply_global_settings(titlepad=titlepad, 
-            linewidth=2.5, dpi=self.dpi)
+            linewidth=self.linewidth, dpi=self.dpi)
 
         figwidth = self.figwidth
         show_rna = self.show_rna
@@ -452,7 +457,7 @@ class TyphoonPlotter:
         span = (TSS - padding[0], TSS + padding[1])
 
         self.set_span_chrom(span, chrom=gene.chr)
-        self.title = gene_name
+        self.title = r'$\it{' + gene_name + '}$'
         self.motifs = motifs
         
         if gene.strand == '+':
@@ -483,7 +488,7 @@ class TyphoonPlotter:
     def plot_genes(self, genes, save_dir, save_all_motifs_dir=None,
                    times=[0, 7.5, 15, 30, 60, 120], 
                    figwidths={}, paddings={}, dpi=100,
-                    default_figwidth=8, titlesize=48):
+                   prefix='', default_figwidth=8, titlesize=48):
 
         self.figwidth = default_figwidth
         self.titlesize = titlesize
@@ -534,14 +539,15 @@ class TyphoonPlotter:
                            should_plot_motifs=plot_tfs_list, 
                            motif_keep=motif_keep,
                            dpi=dpi, times=times,
-                           reverse_motif_zorder=
-                            (gene_name in reverse_motif_zorder))
+                           reverse_motif_zorder=(gene_name in reverse_motif_zorder),
+                           prefix=prefix)
 
             # save all TF motifs
             if save_all_motifs_dir is not None:
                 self.plot_gene(gene_name, save_all_motifs_dir,
                                figwidth=figwidth, padding=padding, 
-                               dpi=dpi, should_plot_motifs=True, times=times)
+                               dpi=dpi, prefix=prefix, 
+                               should_plot_motifs=True, times=times)
 
 
 def _interp(x1, x2, y1, y2):
@@ -595,7 +601,7 @@ def plot_linkages(time_axes, tween_axes, linkages, times):
                     color='#ff8c8c', alpha=0.25, linestyle='solid', lw=3)
 
 
-def draw_legend(leg_ax, plot_span, key_length=500):
+def draw_legend(leg_ax, plot_span, key_length=500, fontsize=18):
 
     span_width = plot_span[1] - plot_span[0]
     inset = span_width*2e-2
@@ -615,42 +621,19 @@ def draw_legend(leg_ax, plot_span, key_length=500):
 
     leg_ax.text(plot_span[0]+inset, y-0.2, 
         '%d nt' % key_length, 
-        color='white', fontsize=18,
+        color='white', fontsize=fontsize,
         fontdict={'fontname': 'Open Sans'},
         ha='left', va='center')
 
-
 def draw_example_mnase_seq(plotter, save_dir):
 
     from src.chromatin import filter_mnase
 
+    apply_global_settings(linewidth=1.75)
+    plotter.linewidth = 1
     span = (124380, 125380)
-    data = filter_mnase(plotter.all_mnase_data, span[0], span[1], chrom=2, time=0)
-
-    fig, (ax, leg_ax) = plt.subplots(2, 1, figsize=(5, 4))
-    fig.tight_layout(rect=[0.1, 0.1, 0.95, 0.945])
-    plt.subplots_adjust(hspace=0.0, wspace=0.5)
-
-    plotter.plot_typhoon_time(ax, data, 0, scale_z=True)
-    ax.set_xlim(*span)
-    ax.set_xticks(np.arange(span[0], span[1], 500))
-    ax.set_xticks(np.arange(span[0], span[1], 100), minor=True)
-
-    ax.set_xlabel("Position (bp)", fontsize=16)
-    ax.set_ylabel("Fragment length (bp)", fontsize=16, labelpad=10)
-
-    draw_legend(leg_ax, span, 500)
-
-    write_path = '%s/%s.pdf' % (save_dir, 'example_mnase_seq')
-    plt.savefig(write_path, transparent=True)
-
-
-def draw_example_mnase_seq(plotter, save_dir):
-
-    from src.chromatin import filter_mnase
-
-    span = (124380, 125380)
-    data = filter_mnase(plotter.all_mnase_data, span[0], span[1], chrom=2, time=0)
+    data = filter_mnase(plotter.all_mnase_data, span[0], span[1], chrom=2, 
+        time=0)
 
     fig, (ax, leg_ax) = plt.subplots(2, 1, figsize=(5, 4))
     fig.tight_layout(rect=[0.1, 0.1, 0.95, 0.945])
@@ -662,18 +645,28 @@ def draw_example_mnase_seq(plotter, save_dir):
     ax.set_xticks(np.arange(span[0], span[1], 500))
     ax.set_xticks(np.arange(span[0], span[1], 100), minor=True)
 
+    ax.set_yticks(np.arange(0, 250, 100))
+    ax.set_yticks(np.arange(0, 250, 50), minor=True)
+
+    ax.tick_params(axis='y', labelsize=11.5, zorder=20)
+
     ax.set_xlabel("Position (bp)", fontsize=16)
-    ax.set_ylabel("Fragment length (bp)", fontsize=16, labelpad=10)
+    ax.set_ylabel("Fragment length (bp)", fontsize=16, labelpad=7)
 
     draw_legend(leg_ax, span, 500)
 
     write_path = '%s/%s.pdf' % (save_dir, 'example_mnase_seq')
     plt.savefig(write_path, transparent=True)
 
+    plotter.linewidth = 2.5
+    apply_global_settings()
+
 
 def draw_example_rna_seq(plotter, save_dir):
 
     from src.rna_seq_plotter import get_strand_colors
+
+    apply_global_settings(linewidth=2.5)
 
     span = 252000, 255500
     rna_plotter = plotter.rna_seq_plotter
@@ -700,9 +693,9 @@ def draw_example_rna_seq(plotter, save_dir):
         custom_orfs=custom_orfs, should_auto_offset=False)
     rna_plotter.plot(ax=ax)
     orf_ax.set_ylim(-60, 60)
-    ax.set_xlabel('Position (bp)', fontsize=20)
+    ax.set_xlabel('Position (bp)', fontsize=24)
 
-    offset = 400
+    offset = 390
     column_spacing = 750
     line_len = 400
     strand_spacing = 1800
@@ -714,6 +707,8 @@ def draw_example_rna_seq(plotter, save_dir):
     strands = 'Watson', 'Crick'
 
     y_start = 2
+
+    ax.tick_params(axis='y', labelsize=16, zorder=20)
 
     for strand_i in range(2):
         time_i = 0
@@ -754,6 +749,8 @@ def draw_example_rna_seq(plotter, save_dir):
     leg_ax.set_ylim(-3, 7)
     leg_ax.axis('off')
     plt.savefig('%s/example_rna_seq.pdf' % save_dir, transparent=True)
+
+    apply_global_settings()
 
 
 def plot_example_cross(plotter, save_dir):

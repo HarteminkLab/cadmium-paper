@@ -228,7 +228,8 @@ def plot_text(ax, start, y, name, color, flipped=False):
 
     text = ax.text(start, y, name, fontsize=22, clip_on=True, zorder=65, 
                    rotation=0, va='center', ha=ha, 
-                   fontdict={'fontname': 'Open Sans', 'fontweight': 'regular'},
+                   fontdict={'fontname': 'Open Sans', 'fontweight': 'regular',
+                   'style': 'italic'},
                    color='white')
     text.set_path_effects([path_effects.Stroke(linewidth=3, foreground=color),
                            path_effects.Normal()])

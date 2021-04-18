@@ -44,7 +44,7 @@ def main():
     # plots for shift edge analysis
     shift_edge_analysis.main()
 
-    additional scatter plots
+    # additional scatter plots
     scatters()
 
     xrate_vs_TPM()

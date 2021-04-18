@@ -55,7 +55,9 @@ class SummaryPlotter:
         vlims=[-3, 3], cmap='Spectral_r', cbarticks=1, cbarscale=1.,
         shaded=(-200, 500), nucs=None, large_font=False):
 
+        # fig, ax = plt.subplots(1, 1, figsize=(8, 5))
         fig, ax = plt.subplots(1, 1, figsize=(8, 3))
+
         fig.tight_layout(rect=[0.075, 0.03, 0.8, 0.945])
 
         fig.patch.set_alpha(0.0)
@@ -131,6 +133,7 @@ class SummaryPlotter:
     def plot_lines(self, orf_name, title='', lims=(None, None, None),
                    large_font=False):
 
+        #fig, dis_ax = plt.subplots(1, 1, figsize=(8, 6))
         fig, dis_ax = plt.subplots(1, 1, figsize=(8, 7))
         fig.tight_layout(rect=[0.15, 0.3, 0.9, 0.9])
 
@@ -217,8 +220,8 @@ class SummaryPlotter:
 
         lines = sm_line + dis_line + xrate_line
         labels = [l.get_label() for l in lines]
-        dis_ax.legend(lines, labels, bbox_to_anchor=(0.5, -0.17), 
-            frameon=False, fontsize=16)
+        dis_ax.legend(lines, labels, bbox_to_anchor=(-0.2, -0.15), 
+            frameon=False, fontsize=16, ncol=2, loc='upper left')
 
         for ax in [sm_ax, x_rate_ax, dis_ax]:
             plot_utils.format_ticks_font(ax, fontname='Open Sans', fontsize=16)
@@ -239,7 +242,7 @@ class SummaryPlotter:
                 continue
             
             fig = self.plot_cross_correlation_heatmap(show_colorbar=True,
-                title='%s cross correlation' % gene_name, 
+                title='$\it{' + gene_name + '}$ cross correlation',
                 large_font=large_font)
             plt.savefig(write_path, transparent=False)
 
@@ -256,7 +259,7 @@ class SummaryPlotter:
             # plot lines plots of time course
             write_path = "%s/%s%s.pdf" % (lines_dir, gene_name, suffix)
             fig = self.plot_lines(self.gene.name,
-                title='%s time course' % gene_name, lims=lims, 
+                title=r'$\it{' + gene_name + '}$ time course', lims=lims, 
                 large_font=large_font)
             plt.savefig(write_path, transparent=False)
             

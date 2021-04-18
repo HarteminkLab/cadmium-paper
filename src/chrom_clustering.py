@@ -346,7 +346,7 @@ class ChromatinClustering:
         dis_ax.set_title(title, fontsize=24)
 
         if xlab:
-            sm_ax.set_xlabel("Promoter\noccupancy", fontsize=16, labelpad=10)
+            sm_ax.set_xlabel("Small fragment\noccupancy", fontsize=16, labelpad=10)
             dis_ax.set_xlabel("Nucleosome\ndisorganization", fontsize=16, labelpad=10)
             x_ax.set_xlabel("Transcript\nrate", fontsize=16, labelpad=10)
 
@@ -363,7 +363,7 @@ class ChromatinClustering:
         data = antisense.loc[cluster_data.index]
         data = data.join(cluster_data[['cluster']])
 
-        fig, ax = plt.subplots(figsize=(7, 5))
+        fig, ax = plt.subplots(figsize=(7, 4))
         fig.tight_layout(rect=[0.05, 0.1, 0.95, 0.8])
         times = [0.0, 7.5, 15, 30, 60, 120]
 
